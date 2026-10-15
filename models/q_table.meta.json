@@ -1,0 +1,47 @@
+{
+  "env": {
+    "board": "11x9",
+    "open_cells": 43,
+    "crystals": 4,
+    "exit": [
+      7,
+      9
+    ],
+    "layout_seed": 3,
+    "hunters": 1,
+    "hunter_kind": "astar",
+    "hunter_move_interval": 2,
+    "time_limit_ticks": 200,
+    "max_health": 3,
+    "actions": [
+      "up",
+      "down",
+      "left",
+      "right",
+      "stay"
+    ],
+    "enemy_window": 2,
+    "rewards": {
+      "step": -0.01,
+      "crystal": 1.0,
+      "exit": 5.0,
+      "hit": -2.0,
+      "defeat": -5.0
+    },
+    "state_space_bound": 23392
+  },
+  "training": {
+    "episodes": 20000,
+    "alpha": 0.2,
+    "gamma": 0.95,
+    "epsilon_start": 1.0,
+    "epsilon_end": 0.05,
+    "explore_fraction": 0.8,
+    "seed": 0,
+    "seconds": 11.5,
+    "states_visited": 1753,
+    "final_window": 500,
+    "final_window_win_rate": 1.0,
+    "final_window_mean_return": 7.133
+  }
+}

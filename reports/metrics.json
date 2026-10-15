@@ -1,0 +1,749 @@
+{
+  "trained_at": "2026-10-11T03:55:28+00:00",
+  "sklearn": "1.9.1",
+  "data": {
+    "path": "data/processed/episodes.csv",
+    "sha256": "c583814a8ad21c33",
+    "rows": 1440,
+    "episodes": 360
+  },
+  "split": {
+    "by": "seed",
+    "seed": 42,
+    "test_fraction": 0.2,
+    "train_rows": 1152,
+    "test_rows": 288,
+    "train_seeds": 96,
+    "test_seeds": 24
+  },
+  "features": [
+    "elapsed_s",
+    "moves_per_tick",
+    "bump_ratio",
+    "idle_ratio",
+    "new_cells_per_tick",
+    "distinct_cells_ratio",
+    "revisit_ratio",
+    "rewards_per_tick",
+    "reward_share",
+    "damage_per_tick",
+    "near_enemy_ratio",
+    "approach_ratio",
+    "progress_rate",
+    "min_exit_distance_ratio"
+  ],
+  "models": {
+    "rule_labeller": {
+      "kind": "thresholds from data/labels.py",
+      "test": {
+        "accuracy": 0.5347222222222222,
+        "macro_f1": 0.5453017856063692,
+        "per_class": {
+          "aggressive": {
+            "precision": 0.6571428571428571,
+            "recall": 0.4791666666666667,
+            "f1": 0.5542168674698795,
+            "support": 96
+          },
+          "cautious": {
+            "precision": 0.7105263157894737,
+            "recall": 0.5625,
+            "f1": 0.627906976744186,
+            "support": 96
+          },
+          "explorer": {
+            "precision": 0.38028169014084506,
+            "recall": 0.5625,
+            "f1": 0.453781512605042,
+            "support": 96
+          }
+        },
+        "labels": [
+          "aggressive",
+          "cautious",
+          "explorer"
+        ],
+        "confusion_matrix": [
+          [
+            46,
+            0,
+            50
+          ],
+          [
+            4,
+            54,
+            38
+          ],
+          [
+            20,
+            22,
+            54
+          ]
+        ]
+      }
+    },
+    "single_feature_tree": {
+      "kind": "depth-2 tree on approach_ratio alone (best of 14 by CV)",
+      "feature": "approach_ratio",
+      "cv": {
+        "macro_f1_mean": 0.6019840170496972
+      },
+      "test": {
+        "accuracy": 0.6215277777777778,
+        "macro_f1": 0.6184678863723957,
+        "per_class": {
+          "aggressive": {
+            "precision": 0.5887850467289719,
+            "recall": 0.65625,
+            "f1": 0.6206896551724138,
+            "support": 96
+          },
+          "cautious": {
+            "precision": 0.6296296296296297,
+            "recall": 0.7083333333333334,
+            "f1": 0.6666666666666666,
+            "support": 96
+          },
+          "explorer": {
+            "precision": 0.6575342465753424,
+            "recall": 0.5,
+            "f1": 0.5680473372781065,
+            "support": 96
+          }
+        },
+        "labels": [
+          "aggressive",
+          "cautious",
+          "explorer"
+        ],
+        "confusion_matrix": [
+          [
+            63,
+            30,
+            3
+          ],
+          [
+            6,
+            68,
+            22
+          ],
+          [
+            38,
+            10,
+            48
+          ]
+        ]
+      }
+    },
+    "majority": {
+      "kind": "DummyClassifier",
+      "hyperparameters": {
+        "constant": null,
+        "random_state": null,
+        "strategy": "most_frequent"
+      },
+      "cv": {
+        "macro_f1_mean": 0.16666666666666666,
+        "macro_f1_std": 0.0,
+        "accuracy_mean": 0.3333333333333333,
+        "folds": 5
+      },
+      "test": {
+        "accuracy": 0.3333333333333333,
+        "macro_f1": 0.16666666666666666,
+        "per_class": {
+          "aggressive": {
+            "precision": 0.3333333333333333,
+            "recall": 1.0,
+            "f1": 0.5,
+            "support": 96
+          },
+          "cautious": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 96
+          },
+          "explorer": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 96
+          }
+        },
+        "labels": [
+          "aggressive",
+          "cautious",
+          "explorer"
+        ],
+        "confusion_matrix": [
+          [
+            96,
+            0,
+            0
+          ],
+          [
+            96,
+            0,
+            0
+          ],
+          [
+            96,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "logistic_regression": {
+      "kind": "LogisticRegression",
+      "hyperparameters": {
+        "C": 1.0,
+        "class_weight": null,
+        "dual": false,
+        "fit_intercept": true,
+        "intercept_scaling": 1,
+        "l1_ratio": 0.0,
+        "max_iter": 5000,
+        "n_jobs": null,
+        "penalty": "deprecated",
+        "random_state": null,
+        "solver": "lbfgs",
+        "tol": 0.0001,
+        "verbose": 0,
+        "warm_start": false
+      },
+      "cv": {
+        "macro_f1_mean": 0.9056977584493744,
+        "macro_f1_std": 0.015389367409682,
+        "accuracy_mean": 0.906140350877193,
+        "folds": 5
+      },
+      "test": {
+        "accuracy": 0.9340277777777778,
+        "macro_f1": 0.9332303870270637,
+        "per_class": {
+          "aggressive": {
+            "precision": 0.8878504672897196,
+            "recall": 0.9895833333333334,
+            "f1": 0.9359605911330049,
+            "support": 96
+          },
+          "cautious": {
+            "precision": 0.9587628865979382,
+            "recall": 0.96875,
+            "f1": 0.9637305699481865,
+            "support": 96
+          },
+          "explorer": {
+            "precision": 0.9642857142857143,
+            "recall": 0.84375,
+            "f1": 0.9,
+            "support": 96
+          }
+        },
+        "labels": [
+          "aggressive",
+          "cautious",
+          "explorer"
+        ],
+        "confusion_matrix": [
+          [
+            95,
+            0,
+            1
+          ],
+          [
+            1,
+            93,
+            2
+          ],
+          [
+            11,
+            4,
+            81
+          ]
+        ]
+      }
+    },
+    "random_forest": {
+      "kind": "RandomForestClassifier",
+      "hyperparameters": {
+        "bootstrap": true,
+        "ccp_alpha": 0.0,
+        "class_weight": null,
+        "criterion": "gini",
+        "max_depth": null,
+        "max_features": "sqrt",
+        "max_leaf_nodes": null,
+        "max_samples": null,
+        "min_impurity_decrease": 0.0,
+        "min_samples_leaf": 2,
+        "min_samples_split": 2,
+        "min_weight_fraction_leaf": 0.0,
+        "monotonic_cst": null,
+        "n_estimators": 300,
+        "n_jobs": -1,
+        "oob_score": false,
+        "random_state": 42,
+        "verbose": 0,
+        "warm_start": false
+      },
+      "cv": {
+        "macro_f1_mean": 0.9036984645645134,
+        "macro_f1_std": 0.011670240069774046,
+        "accuracy_mean": 0.9036842105263159,
+        "folds": 5
+      },
+      "test": {
+        "accuracy": 0.9236111111111112,
+        "macro_f1": 0.9235378111263545,
+        "per_class": {
+          "aggressive": {
+            "precision": 0.8823529411764706,
+            "recall": 0.9375,
+            "f1": 0.9090909090909091,
+            "support": 96
+          },
+          "cautious": {
+            "precision": 0.9789473684210527,
+            "recall": 0.96875,
+            "f1": 0.9738219895287958,
+            "support": 96
+          },
+          "explorer": {
+            "precision": 0.9120879120879121,
+            "recall": 0.8645833333333334,
+            "f1": 0.8877005347593583,
+            "support": 96
+          }
+        },
+        "labels": [
+          "aggressive",
+          "cautious",
+          "explorer"
+        ],
+        "confusion_matrix": [
+          [
+            90,
+            0,
+            6
+          ],
+          [
+            1,
+            93,
+            2
+          ],
+          [
+            11,
+            2,
+            83
+          ]
+        ]
+      }
+    },
+    "knn": {
+      "kind": "KNeighborsClassifier",
+      "hyperparameters": {
+        "algorithm": "auto",
+        "leaf_size": 30,
+        "metric": "minkowski",
+        "metric_params": null,
+        "n_jobs": null,
+        "n_neighbors": 15,
+        "p": 2,
+        "weights": "uniform"
+      },
+      "cv": {
+        "macro_f1_mean": 0.8864616451221847,
+        "macro_f1_std": 0.02281031519727564,
+        "accuracy_mean": 0.8867543859649123,
+        "folds": 5
+      },
+      "test": {
+        "accuracy": 0.9027777777777778,
+        "macro_f1": 0.9015849914483702,
+        "per_class": {
+          "aggressive": {
+            "precision": 0.8666666666666667,
+            "recall": 0.9479166666666666,
+            "f1": 0.9054726368159204,
+            "support": 96
+          },
+          "cautious": {
+            "precision": 0.9387755102040817,
+            "recall": 0.9583333333333334,
+            "f1": 0.9484536082474226,
+            "support": 96
+          },
+          "explorer": {
+            "precision": 0.9058823529411765,
+            "recall": 0.8020833333333334,
+            "f1": 0.850828729281768,
+            "support": 96
+          }
+        },
+        "labels": [
+          "aggressive",
+          "cautious",
+          "explorer"
+        ],
+        "confusion_matrix": [
+          [
+            91,
+            0,
+            5
+          ],
+          [
+            1,
+            92,
+            3
+          ],
+          [
+            13,
+            6,
+            77
+          ]
+        ]
+      }
+    }
+  },
+  "selected": {
+    "model": "logistic_regression",
+    "reason": "highest grouped-CV macro-F1 on the training rows (test rows were not used for selection)",
+    "accuracy_by_prefix": {
+      "0.25": 0.9166666666666666,
+      "0.5": 0.9305555555555556,
+      "0.75": 0.9305555555555556,
+      "1.0": 0.9583333333333334
+    },
+    "confusion_pairs": [
+      {
+        "true": "explorer",
+        "predicted": "aggressive",
+        "count": 11
+      },
+      {
+        "true": "explorer",
+        "predicted": "cautious",
+        "count": 4
+      },
+      {
+        "true": "cautious",
+        "predicted": "explorer",
+        "count": 2
+      },
+      {
+        "true": "aggressive",
+        "predicted": "explorer",
+        "count": 1
+      },
+      {
+        "true": "cautious",
+        "predicted": "aggressive",
+        "count": 1
+      }
+    ],
+    "worst_errors": [
+      {
+        "episode_id": "explorer-0020",
+        "prefix_ratio": 0.5,
+        "true": "explorer",
+        "predicted": "aggressive",
+        "confidence": 0.969444315055697,
+        "p_true": 0.030021094099794126,
+        "elapsed_s": 9.7,
+        "damage_per_tick": 0.01,
+        "idle_ratio": 0.021,
+        "new_cells_per_tick": 0.67,
+        "approach_ratio": 0.5
+      },
+      {
+        "episode_id": "explorer-0114",
+        "prefix_ratio": 0.75,
+        "true": "explorer",
+        "predicted": "aggressive",
+        "confidence": 0.9264993822710138,
+        "p_true": 0.07318170629125287,
+        "elapsed_s": 11.0,
+        "damage_per_tick": 0.009,
+        "idle_ratio": 0.0,
+        "new_cells_per_tick": 0.736,
+        "approach_ratio": 0.462
+      },
+      {
+        "episode_id": "explorer-0020",
+        "prefix_ratio": 0.25,
+        "true": "explorer",
+        "predicted": "aggressive",
+        "confidence": 0.8879013944501424,
+        "p_true": 0.08580967736520342,
+        "elapsed_s": 4.8,
+        "damage_per_tick": 0.0,
+        "idle_ratio": 0.0,
+        "new_cells_per_tick": 0.812,
+        "approach_ratio": 0.0
+      },
+      {
+        "episode_id": "explorer-0113",
+        "prefix_ratio": 0.25,
+        "true": "explorer",
+        "predicted": "aggressive",
+        "confidence": 0.8820145043990647,
+        "p_true": 0.10583982883549725,
+        "elapsed_s": 1.8,
+        "damage_per_tick": 0.0,
+        "idle_ratio": 0.0,
+        "new_cells_per_tick": 1.0,
+        "approach_ratio": 0.0
+      },
+      {
+        "episode_id": "cautious-0088",
+        "prefix_ratio": 1.0,
+        "true": "cautious",
+        "predicted": "explorer",
+        "confidence": 0.816731438611697,
+        "p_true": 0.18326848304897386,
+        "elapsed_s": 85.5,
+        "damage_per_tick": 0.0,
+        "idle_ratio": 0.557,
+        "new_cells_per_tick": 0.137,
+        "approach_ratio": 0.7
+      },
+      {
+        "episode_id": "explorer-0113",
+        "prefix_ratio": 1.0,
+        "true": "explorer",
+        "predicted": "aggressive",
+        "confidence": 0.8000119561875909,
+        "p_true": 0.07250530976325535,
+        "elapsed_s": 7.4,
+        "damage_per_tick": 0.0,
+        "idle_ratio": 0.0,
+        "new_cells_per_tick": 0.919,
+        "approach_ratio": 0.0
+      },
+      {
+        "episode_id": "explorer-0114",
+        "prefix_ratio": 0.25,
+        "true": "explorer",
+        "predicted": "aggressive",
+        "confidence": 0.7673020539845542,
+        "p_true": 0.17329271400626622,
+        "elapsed_s": 3.6,
+        "damage_per_tick": 0.0,
+        "idle_ratio": 0.0,
+        "new_cells_per_tick": 0.778,
+        "approach_ratio": 0.0
+      },
+      {
+        "episode_id": "explorer-0082",
+        "prefix_ratio": 0.25,
+        "true": "explorer",
+        "predicted": "aggressive",
+        "confidence": 0.7636298338338374,
+        "p_true": 0.23626052297750316,
+        "elapsed_s": 2.9,
+        "damage_per_tick": 0.0,
+        "idle_ratio": 0.0,
+        "new_cells_per_tick": 0.862,
+        "approach_ratio": 1.0
+      },
+      {
+        "episode_id": "aggressive-0084",
+        "prefix_ratio": 0.75,
+        "true": "aggressive",
+        "predicted": "explorer",
+        "confidence": 0.7522587981009865,
+        "p_true": 0.2377096968097931,
+        "elapsed_s": 10.0,
+        "damage_per_tick": 0.0,
+        "idle_ratio": 0.0,
+        "new_cells_per_tick": 0.71,
+        "approach_ratio": 0.5
+      },
+      {
+        "episode_id": "explorer-0113",
+        "prefix_ratio": 0.5,
+        "true": "explorer",
+        "predicted": "aggressive",
+        "confidence": 0.7388491448425996,
+        "p_true": 0.19462322358381398,
+        "elapsed_s": 3.7,
+        "damage_per_tick": 0.0,
+        "idle_ratio": 0.0,
+        "new_cells_per_tick": 0.892,
+        "approach_ratio": 0.0
+      }
+    ],
+    "importances": {
+      "permutation": {
+        "elapsed_s": {
+          "mean": -0.005950057108673345,
+          "std": 0.002761406973705664
+        },
+        "moves_per_tick": {
+          "mean": 0.12082053416309817,
+          "std": 0.018776239598211286
+        },
+        "bump_ratio": {
+          "mean": 0.02152920925281534,
+          "std": 0.005498627061933824
+        },
+        "idle_ratio": {
+          "mean": 0.13867905627078186,
+          "std": 0.019266137315877258
+        },
+        "new_cells_per_tick": {
+          "mean": 0.12894280228558302,
+          "std": 0.018640481917070795
+        },
+        "distinct_cells_ratio": {
+          "mean": 0.12241573570033833,
+          "std": 0.020814286818334627
+        },
+        "revisit_ratio": {
+          "mean": 0.005327057014333158,
+          "std": 0.0029383247213226106
+        },
+        "rewards_per_tick": {
+          "mean": -0.0027390920670831375,
+          "std": 0.007339390558320687
+        },
+        "reward_share": {
+          "mean": 0.062046803860256225,
+          "std": 0.008159716571916631
+        },
+        "damage_per_tick": {
+          "mean": 0.15581532901266107,
+          "std": 0.01300042402202008
+        },
+        "near_enemy_ratio": {
+          "mean": 0.23138438574525924,
+          "std": 0.02363598517504543
+        },
+        "approach_ratio": {
+          "mean": 0.026752897765057026,
+          "std": 0.010228159428448529
+        },
+        "progress_rate": {
+          "mean": 0.0159980964308163,
+          "std": 0.009745614642289931
+        },
+        "min_exit_distance_ratio": {
+          "mean": 0.051253238142647706,
+          "std": 0.00674668702479692
+        }
+      },
+      "coefficients": {
+        "aggressive": {
+          "elapsed_s": 0.2069858675904614,
+          "moves_per_tick": 1.8859416761795538,
+          "bump_ratio": 0.4522483724004725,
+          "idle_ratio": -2.0259171729970524,
+          "new_cells_per_tick": 1.4679072653894347,
+          "distinct_cells_ratio": -0.7093465824587976,
+          "revisit_ratio": 0.14082785643018508,
+          "rewards_per_tick": 0.3707038404745393,
+          "reward_share": 0.6460690043188655,
+          "damage_per_tick": 2.0602883454061383,
+          "near_enemy_ratio": 1.1858982137887486,
+          "approach_ratio": 0.5104091928713675,
+          "progress_rate": 0.3993014513597074,
+          "min_exit_distance_ratio": 0.895880168968184
+        },
+        "cautious": {
+          "elapsed_s": -0.4156610128664336,
+          "moves_per_tick": -1.3866866977033212,
+          "bump_ratio": -0.20999839487393193,
+          "idle_ratio": 1.7254851974934347,
+          "new_cells_per_tick": -1.3581191312776335,
+          "distinct_cells_ratio": -0.697106381804027,
+          "revisit_ratio": 0.06501262859979562,
+          "rewards_per_tick": -0.5250916085407179,
+          "reward_share": 0.3476015410255836,
+          "damage_per_tick": -0.16116826502857912,
+          "near_enemy_ratio": -3.597831286479638,
+          "approach_ratio": -1.1993078598460063,
+          "progress_rate": 0.1265436934133884,
+          "min_exit_distance_ratio": -0.7566044825363988
+        },
+        "explorer": {
+          "elapsed_s": 0.20867514527595535,
+          "moves_per_tick": -0.4992549784762693,
+          "bump_ratio": -0.24224997752653896,
+          "idle_ratio": 0.3004319755036139,
+          "new_cells_per_tick": -0.10978813411182403,
+          "distinct_cells_ratio": 1.4064529642628216,
+          "revisit_ratio": -0.20584048502998117,
+          "rewards_per_tick": 0.1543877680661739,
+          "reward_share": -0.9936705453444482,
+          "damage_per_tick": -1.8991200803775738,
+          "near_enemy_ratio": 2.4119330726909007,
+          "approach_ratio": 0.6888986669746544,
+          "progress_rate": -0.525845144773096,
+          "min_exit_distance_ratio": -0.13927568643179017
+        }
+      }
+    }
+  },
+  "ablation_without_elapsed_s": {
+    "model": "logistic_regression",
+    "cv": {
+      "macro_f1_mean": 0.9082163211784277,
+      "macro_f1_std": 0.012974831801339976,
+      "accuracy_mean": 0.9087719298245613,
+      "folds": 5
+    },
+    "test": {
+      "accuracy": 0.9409722222222222,
+      "macro_f1": 0.9401439750141805,
+      "per_class": {
+        "aggressive": {
+          "precision": 0.8878504672897196,
+          "recall": 0.9895833333333334,
+          "f1": 0.9359605911330049,
+          "support": 96
+        },
+        "cautious": {
+          "precision": 0.9595959595959596,
+          "recall": 0.9895833333333334,
+          "f1": 0.9743589743589743,
+          "support": 96
+        },
+        "explorer": {
+          "precision": 0.9878048780487805,
+          "recall": 0.84375,
+          "f1": 0.9101123595505618,
+          "support": 96
+        }
+      },
+      "labels": [
+        "aggressive",
+        "cautious",
+        "explorer"
+      ],
+      "confusion_matrix": [
+        [
+          95,
+          0,
+          1
+        ],
+        [
+          1,
+          95,
+          0
+        ],
+        [
+          11,
+          4,
+          81
+        ]
+      ]
+    }
+  },
+  "artifacts": {
+    "model": "models/behaviour_clf.joblib",
+    "meta": "models/behaviour_clf.meta.json"
+  }
+}

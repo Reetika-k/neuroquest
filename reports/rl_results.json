@@ -1,0 +1,168 @@
+{
+  "env": {
+    "board": "11x9",
+    "open_cells": 43,
+    "crystals": 4,
+    "exit": [
+      7,
+      9
+    ],
+    "layout_seed": 3,
+    "hunters": 1,
+    "hunter_kind": "astar",
+    "hunter_move_interval": 2,
+    "time_limit_ticks": 200,
+    "max_health": 3,
+    "actions": [
+      "up",
+      "down",
+      "left",
+      "right",
+      "stay"
+    ],
+    "enemy_window": 2,
+    "rewards": {
+      "step": -0.01,
+      "crystal": 1.0,
+      "exit": 5.0,
+      "hit": -2.0,
+      "defeat": -5.0
+    },
+    "state_space_bound": 23392
+  },
+  "training": {
+    "episodes": 20000,
+    "alpha": 0.2,
+    "gamma": 0.95,
+    "epsilon_start": 1.0,
+    "epsilon_end": 0.05,
+    "explore_fraction": 0.8,
+    "seed": 0,
+    "seconds": 11.5,
+    "states_visited": 1753,
+    "final_window": 500,
+    "final_window_win_rate": 1.0,
+    "final_window_mean_return": 7.133
+  },
+  "evaluation": {
+    "seed_start": 100000,
+    "episodes": 100,
+    "distinct_hunter_starts": 20,
+    "agents": {
+      "random": {
+        "episodes": 100,
+        "win_rate": 0.0,
+        "win_rate_ci95": [
+          0.0,
+          0.037
+        ],
+        "mean_return": -11.055,
+        "mean_crystals": 0.45,
+        "mean_hits": 3.0,
+        "mean_steps": 50.5,
+        "outcomes": {
+          "lost_health": 100
+        }
+      },
+      "astar_exit": {
+        "episodes": 100,
+        "win_rate": 1.0,
+        "win_rate_ci95": [
+          0.963,
+          1.0
+        ],
+        "mean_return": 6.08,
+        "mean_crystals": 2.0,
+        "mean_hits": 0.39,
+        "mean_steps": 14.0,
+        "outcomes": {
+          "won": 100
+        }
+      },
+      "greedy_collector": {
+        "episodes": 100,
+        "win_rate": 1.0,
+        "win_rate_ci95": [
+          0.963,
+          1.0
+        ],
+        "mean_return": 7.1,
+        "mean_crystals": 4.0,
+        "mean_hits": 0.82,
+        "mean_steps": 26.0,
+        "outcomes": {
+          "won": 100
+        }
+      },
+      "cautious": {
+        "episodes": 100,
+        "win_rate": 1.0,
+        "win_rate_ci95": [
+          0.963,
+          1.0
+        ],
+        "mean_return": 6.852,
+        "mean_crystals": 2.17,
+        "mean_hits": 0.0,
+        "mean_steps": 31.8,
+        "outcomes": {
+          "won": 100
+        }
+      },
+      "q_learning": {
+        "episodes": 100,
+        "win_rate": 1.0,
+        "win_rate_ci95": [
+          0.963,
+          1.0
+        ],
+        "mean_return": 7.319,
+        "mean_crystals": 2.59,
+        "mean_hits": 0.04,
+        "mean_steps": 19.1,
+        "outcomes": {
+          "won": 100
+        }
+      }
+    }
+  },
+  "other_layout": {
+    "layout_seed": 4,
+    "q_learning": {
+      "episodes": 100,
+      "win_rate": 0.0,
+      "win_rate_ci95": [
+        0.0,
+        0.037
+      ],
+      "mean_return": -11.577,
+      "mean_crystals": 0.0,
+      "mean_hits": 3.0,
+      "mean_steps": 57.7,
+      "outcomes": {
+        "lost_health": 100
+      }
+    },
+    "random": {
+      "episodes": 100,
+      "win_rate": 0.0,
+      "win_rate_ci95": [
+        0.0,
+        0.037
+      ],
+      "mean_return": -11.227,
+      "mean_crystals": 0.31,
+      "mean_hits": 3.0,
+      "mean_steps": 53.7,
+      "outcomes": {
+        "lost_health": 100
+      }
+    }
+  },
+  "artifacts": {
+    "q_table": "models/q_table.npz",
+    "meta": "models/q_table.meta.json",
+    "curve": "reports/rl_curve.csv",
+    "eval": "reports/rl_eval.csv"
+  }
+}

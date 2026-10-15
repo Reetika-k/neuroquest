@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neuroquest"
+version = "0.1.0"
+description = "NeuroQuest: a maze survival game that classifies player behaviour with ML and adapts its difficulty"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "pygame-ce>=2.5,<3",
+  "numpy>=2.0,<3",
+  "pandas>=2.3,<3",
+  "scikit-learn>=1.9,<2",
+  "matplotlib>=3.10,<4",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<9", "coverage>=7,<8"]
+rl = ["gymnasium>=1.0,<2"]   # optional: only to expose MazeEnv through the standard API (Phase 9b)
+web = ["pygbag"]             # optional: browser build of the game-only part (stretch)
+
+[project.scripts]
+neuroquest = "neuroquest.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

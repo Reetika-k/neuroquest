@@ -1,0 +1,44 @@
+Name                                  Stmts   Miss  Cover   Missing
+-------------------------------------------------------------------
+src/neuroquest/__init__.py                1      0 100.0%
+src/neuroquest/__main__.py                2      2   0.0%   3-5
+src/neuroquest/adapt/bounds.py           14      0 100.0%
+src/neuroquest/adapt/controller.py      110      0 100.0%
+src/neuroquest/ai/astar.py               36      1  97.2%   59
+src/neuroquest/ai/benchmark.py           72      0 100.0%
+src/neuroquest/ai/bfs.py                 45      0 100.0%
+src/neuroquest/ai/graph.py               11      0 100.0%
+src/neuroquest/ai/policies.py            20      0 100.0%
+src/neuroquest/cli.py                   199      6  97.0%   98-101, 105, 173
+src/neuroquest/config.py                 20      0 100.0%
+src/neuroquest/core/entities.py          13      0 100.0%
+src/neuroquest/core/maze.py              91      0 100.0%
+src/neuroquest/core/rules.py            146      0 100.0%
+src/neuroquest/core/state.py             46      0 100.0%
+src/neuroquest/dashboard/figures.py     211      1  99.5%   131
+src/neuroquest/dashboard/report.py      165      1  99.4%   45
+src/neuroquest/data/dataset.py           45      1  97.8%   49
+src/neuroquest/data/events.py            41      0 100.0%
+src/neuroquest/data/features.py          30      0 100.0%
+src/neuroquest/data/labels.py            12      0 100.0%
+src/neuroquest/data/schema.py            35      0 100.0%
+src/neuroquest/ml/evaluate.py            39      1  97.4%   71
+src/neuroquest/ml/predict.py             34      0 100.0%
+src/neuroquest/ml/split.py               13      0 100.0%
+src/neuroquest/ml/train.py              101      0 100.0%
+src/neuroquest/rl/agents.py              43      1  97.7%   85
+src/neuroquest/rl/env.py                 83      1  98.8%   118
+src/neuroquest/rl/pipeline.py            56      0 100.0%
+src/neuroquest/rl/qlearning.py          106      0 100.0%
+src/neuroquest/sim/ab.py                 50      1  98.0%   72
+src/neuroquest/sim/harness.py            59      0 100.0%
+src/neuroquest/sim/profiles.py          107      0 100.0%
+src/neuroquest/ui/app.py                197      0 100.0%
+src/neuroquest/ui/input.py                9      0 100.0%
+src/neuroquest/ui/panel.py              145      1  99.3%   193
+src/neuroquest/ui/render.py             441      2  99.5%   220, 399
+src/neuroquest/ui/theme.py              107      7  93.5%   50-51, 62-65, 67
+-------------------------------------------------------------------
+TOTAL                                  2955     26  99.1%
+
+9 empty files skipped.

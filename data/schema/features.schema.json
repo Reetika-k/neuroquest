@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "labels": [
+    "aggressive",
+    "cautious",
+    "explorer"
+  ],
+  "label_note": "synthetic rows: the profile that played the episode; human rows: 'rule:<class>' from data/labels.py",
+  "columns": [
+    "episode_id",
+    "label",
+    "profile",
+    "seed",
+    "outcome",
+    "ticks_total",
+    "prefix_ratio",
+    "ticks_seen",
+    "elapsed_s",
+    "moves_per_tick",
+    "bump_ratio",
+    "idle_ratio",
+    "new_cells_per_tick",
+    "distinct_cells_ratio",
+    "revisit_ratio",
+    "rewards_per_tick",
+    "reward_share",
+    "damage_per_tick",
+    "near_enemy_ratio",
+    "approach_ratio",
+    "progress_rate",
+    "min_exit_distance_ratio"
+  ],
+  "features": [
+    {
+      "name": "elapsed_s",
+      "min": 0.0,
+      "max": 36000.0,
+      "description": "seconds of play seen"
+    },
+    {
+      "name": "moves_per_tick",
+      "min": 0.0,
+      "max": 1.0,
+      "description": "successful moves per tick"
+    },
+    {
+      "name": "bump_ratio",
+      "min": 0.0,
+      "max": 1.0,
+      "description": "wall bumps / (moves + bumps)"
+    },
+    {
+      "name": "idle_ratio",
+      "min": 0.0,
+      "max": 1.0,
+      "description": "ticks with no move or bump / ticks"
+    },
+    {
+      "name": "new_cells_per_tick",
+      "min": 0.0,
+      "max": 1.0,
+      "description": "first visits per tick"
+    },
+    {
+      "name": "distinct_cells_ratio",
+      "min": 0.0,
+      "max": 1.0,
+      "description": "distinct cells visited / open cells"
+    },
+    {
+      "name": "revisit_ratio",
+      "min": 0.0,
+      "max": 1.0,
+      "description": "moves into already visited cells / moves"
+    },
+    {
+      "name": "rewards_per_tick",
+      "min": 0.0,
+      "max": 1.0,
+      "description": "rewards collected per tick"
+    },
+    {
+      "name": "reward_share",
+      "min": 0.0,
+      "max": 1.0,
+      "description": "rewards collected / rewards available"
+    },
+    {
+      "name": "damage_per_tick",
+      "min": 0.0,
+      "max": 1.0,
+      "description": "hits taken per tick"
+    },
+    {
+      "name": "near_enemy_ratio",
+      "min": 0.0,
+      "max": 1.0,
+      "description": "ticks within 2 cells of an enemy / ticks"
+    },
+    {
+      "name": "approach_ratio",
+      "min": 0.0,
+      "max": 1.0,
+      "description": "near-enemy moves that reduced the distance / near-enemy moves"
+    },
+    {
+      "name": "progress_rate",
+      "min": -5.0,
+      "max": 1.0,
+      "description": "(start distance to exit \u2212 current) / start distance; negative means farther away"
+    },
+    {
+      "name": "min_exit_distance_ratio",
+      "min": 0.0,
+      "max": 5.0,
+      "description": "closest distance to exit reached / start distance"
+    }
+  ]
+}
