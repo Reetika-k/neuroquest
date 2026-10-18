@@ -52,6 +52,9 @@ class Event:
     detail: dict[str, Any] = field(default_factory=dict)
 
 
+RECENT_ACTIONS = 3  # how many of the player's latest actions the state remembers (Phase 7b features)
+
+
 @dataclass(frozen=True)
 class GameState:
     """A complete snapshot of one tick. ``step()`` returns a new one; the old one is never mutated."""
@@ -67,6 +70,7 @@ class GameState:
     ticks_per_second: int = 10
     enemies: tuple[Enemy, ...] = ()
     invulnerability_ticks: int = 15
+    recent_actions: tuple[Action, ...] = ()  # the player's last RECENT_ACTIONS actions, oldest first (Phase 7b)
 
     @property
     def elapsed_s(self) -> float:

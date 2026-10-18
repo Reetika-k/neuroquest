@@ -32,8 +32,19 @@ def test_ab_dashboard_and_rl_commands_with_repository_data(tmp_path, monkeypatch
     assert (tmp_path / "dash.html").stat().st_size > 100_000 and list((tmp_path / "figs").glob("dash_*.png"))
     assert main(["rl-train", "--episodes", "30", "--eval-episodes", "2", "--model-dir", str(tmp_path / "rl-models"), "--report-dir", str(tmp_path / "rl-reports")]) == 0
     assert (tmp_path / "rl-models" / "q_table.npz").exists() and (tmp_path / "rl-reports" / "rl_results.json").exists()
+    assert main(["benchmark-pursuit", "--episodes", "1", "--seed", "9200", "--out", str(tmp_path / "pursuit.csv")]) == 0  # uses the repository's next-move model
+    assert (tmp_path / "pursuit.csv").read_text().count("\n") == 7  # header + 2 kinds × 3 profiles
     out = capsys.readouterr().out
-    assert "adaptive − fixed" in out and "dashboard:" in out and "Q-learning" in out
+    assert "adaptive − fixed" in out and "dashboard:" in out and "Q-learning" in out and "Pursuit" in out
+
+
+def test_build_moves_and_train_next_move_commands(tmp_path, tiny_model_dir, capsys) -> None:
+    assert main(["build-moves", "--raw", str(tiny_model_dir.parent / "raw"), "--out", str(tmp_path / "moves.csv")]) == 0
+    assert (tmp_path / "moves.csv").exists()
+    assert main(["train-next-move", "--data", str(tmp_path / "moves.csv"), "--model-dir", str(tmp_path / "models"), "--report", str(tmp_path / "nm.json"), "--seed", "1", "--fast"]) == 0
+    assert (tmp_path / "models" / "next_move.joblib").exists() and (tmp_path / "nm.json").exists()
+    out = capsys.readouterr().out
+    assert "episodes replayed: 24" in out and "selected:" in out
 
 
 def test_play_without_a_q_table_fails_cleanly(tmp_path, monkeypatch, capsys) -> None:

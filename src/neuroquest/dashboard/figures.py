@@ -221,6 +221,50 @@ def fig_ab(rows: list[dict], out: Path) -> Path | None:
     return _save(fig, out)
 
 
+# ---------- next-move model (Phase 7b) ----------
+
+NM_LABELS = {"majority": "majority", "repeat_last": "repeat last", "greedy": "greedy rule", "logistic_regression": "logistic regression", "random_forest": "random forest"}
+
+
+def fig_next_move(report: dict, out: Path) -> Path | None:
+    """Baselines vs models on the temporal test rows; per-profile accuracy; the selected model's confusion matrix."""
+    models = report.get("models") or {}
+    if not models:
+        return None
+    names = [n for n in NM_LABELS if n in models] + [n for n in models if n not in NM_LABELS]
+    selected = report["selected"]["model"]
+    fig, axes = plt.subplots(1, 3, figsize=(14, 4.2))
+    x = np.arange(len(names))
+    colours = [COLOURS["explorer"] if n == selected else (MUTED if n in ("majority", "repeat_last", "greedy") else "#8f6eff") for n in names]
+    axes[0].bar(x - 0.2, [models[n]["test"]["accuracy"] for n in names], 0.4, color=colours, label="accuracy")
+    axes[0].bar(x + 0.2, [models[n]["test"]["macro_f1"] for n in names], 0.4, color=colours, alpha=0.55, label="macro-F1")
+    axes[0].set_xticks(x, [NM_LABELS.get(n, n) for n in names], rotation=20, ha="right", fontsize=8)
+    axes[0].set_ylim(0, 1)
+    axes[0].set_title("Next move: test accuracy (solid) and macro-F1 (light)")
+    profiles = sorted(models[selected]["per_profile_accuracy"])
+    px = np.arange(len(profiles))
+    for i, (name, colour) in enumerate((("greedy", MUTED), ("repeat_last", "#5b6590"), (selected, COLOURS["explorer"]))):
+        if name in models:
+            axes[1].bar(px + (i - 1) * 0.27, [models[name]["per_profile_accuracy"].get(p, 0) for p in profiles], 0.27, color=colour, label=NM_LABELS.get(name, name))
+    axes[1].set_xticks(px, profiles)
+    axes[1].set_ylim(0, 1)
+    axes[1].set_title("Accuracy by player profile")
+    axes[1].legend(fontsize=8)
+    cm = np.array(models[selected]["test"]["confusion_matrix"])
+    labels = models[selected]["test"]["labels"]
+    axes[2].imshow(cm, cmap="Blues")
+    axes[2].set_xticks(range(len(labels)), labels, rotation=30, ha="right", fontsize=8)
+    axes[2].set_yticks(range(len(labels)), labels, fontsize=8)
+    axes[2].set_xlabel("predicted")
+    axes[2].set_ylabel("true")
+    axes[2].grid(False)
+    for i in range(len(labels)):
+        for j in range(len(labels)):
+            axes[2].text(j, i, str(cm[i, j]), ha="center", va="center", fontsize=7, color="#0f1428" if cm[i, j] < cm.max() / 2 else INK)  # dark text on the light cells
+    axes[2].set_title(f"Confusion — {NM_LABELS.get(selected, selected)}")
+    return _save(fig, out)
+
+
 # ---------- reinforcement learning (Phase 9b) ----------
 
 RL_COLOURS = {"random": MUTED, "astar_exit": "#8f6eff", "greedy_collector": COLOURS["aggressive"], "cautious": COLOURS["cautious"], "q_learning": COLOURS["explorer"]}

@@ -1,6 +1,6 @@
-# NeuroQuest — Test report (Phase 10)
+# NeuroQuest — Test report (Phase 10, updated for Phase 7b)
 
-Date: 2026-10-15 · Suite: **377 passed, 0 failed, 0 skipped in 50.9 s** · Line coverage: **99.1 %** (2,955 statements, 26 not executed) · Raw outputs: `reports/pytest_results.txt`, `reports/coverage.txt`
+Date: 2026-10-17 (Phase 10 run on 2026-10-15: 377 passed, 99.1 %; Phase 7b run on 2026-10-16: 388 passed, 99.2 %) · Latest run, after the cartoon-world interface of entry 13: **388 passed, 0 failed, 0 skipped**, about 4.5 min alone (the next-move tests train small forests) · Line coverage: **99.1 %** (3,397 statements, 31 not executed; the remaining misses are font fallbacks and cache-flush branches) · Raw outputs: `reports/pytest_results.txt`, `reports/coverage.txt`
 
 Environment: macOS, Python 3.13.7 (python.org), pygame-ce 2.5.8, scikit-learn 1.9.1, pytest 8.4.2, coverage 7.16.2. Every test runs headless (`SDL_VIDEODRIVER=dummy`, Matplotlib Agg) from `tests/conftest.py`, so the suite needs no display.
 
@@ -39,10 +39,11 @@ Rules followed in this report: every status below comes from an executed run; no
 | **test_scenarios.py** | 10 | win, loss by health, loss by time, restart, pause, keys, Esc, window close, menu, adaptive change | 10 |
 | **test_edge_cases.py** | 14 | smallest boards, empty/over-full parameters, walled-off enemy, window sizes, text, CLI repair, BFS, panel | 10 |
 | **test_regressions.py** | 6 | one test per fixed bug (see 2.6) | 10 |
-| **test_cli.py** | 3 | every command through `main()` into a temporary folder | 10 |
-| **Total** | **377** | | |
+| **test_cli.py** | 4 | every command through `main()` into a temporary folder | 10, 7b |
+| **test_next_move.py** | 10 | recent actions in the state, next-move features, exact replay with mismatch counting, temporal split, baselines, training, predictor, anticipating hunter, pursuit benchmark | 7b |
+| **Total** | **388** | | |
 
-Phase 10 added 37 cases in the five bold files plus 2 in existing files (out-of-date model; RL progress callback) and extended 1.
+Phase 10 added 37 cases in the bold files plus 2 in existing files (out-of-date model; RL progress callback) and extended 1. Phase 7b (2026-10-16) added 11 cases (`test_next_move.py` and one CLI test) and updated three.
 
 ## 2. Test cases: expected, actual, status, improvement
 
@@ -144,6 +145,24 @@ Success criterion S4 (≥ 0.20 macro-F1 over the majority baseline): met by 0.76
 | ab-test, dashboard, rl-train with the repository data (outputs to temp) | exit 0; CSV with 2 rows; dashboard > 100 KB with figures; Q-table and results | as expected | pass | `dashboard --figures-dir` added so a test never rewrites the repository's figures |
 | play --agent without a Q-table | exit 1 with a hint to run rl-train | as expected | pass | — |
 
+### 2.8 Next-move model (Phase 7b, added 2026-10-16)
+
+| Test case | Expected | Actual | Status | Improvement |
+|---|---|---|---|---|
+| `step()` keeps the last three actions | after four actions the state holds the last three, oldest first | as expected | pass | one new state field, default empty; every older test unchanged |
+| Features on a hand-made board | 43 named features; open/visited neighbours, signs and distances to crystal, portal, hunter, shortest-path directions all as computed by hand; empty board gives the clip values | as expected | pass | — |
+| Exact replay of every tiny log | replay reproduces outcome, ticks and score; one row per tick; actions legal | 24/24 replayed exactly | pass | — |
+| Human log skipped, tampered log counted as a replay mismatch | 1 replayed, `human-x.jsonl` skipped, `tampered.jsonl` in `replay_failed` | as expected | pass | — |
+| Dataset and temporal split | columns = metadata + features; no missing values; train seeds all below test seeds; no episode straddles | as expected | pass | — |
+| Baselines | repeat-last and greedy produce exactly the rule's answer on crafted rows | as expected | pass | — |
+| Training protocol | five models reported with 5×5 confusion matrices and per-profile accuracy; selection ∈ {LR, RF}; meta lists the 43 features | as expected | pass | — |
+| Predictor | legal action, probabilities sum to 1, predicted cell open and adjacent or same; mismatched meta refused | as expected | pass | — |
+| Anticipating hunter | moves to a neighbour or stays; without a model it returns exactly the A* chaser's cell on 30 states; prediction and fallback counters | as expected | pass | single-threaded inference (a thread pool per call cost ~100 ms) and one shared prediction per tick |
+| Pursuit benchmark | 4 rows for 2 kinds × 2 profiles; first-contact ticks within the episode; summary per kind and profile | as expected | pass | — |
+| CLI `build-moves`, `train-next-move`, `benchmark-pursuit` | exit 0; files written; summaries printed | as expected | pass | — |
+
+The real run: 360 episodes replayed with 0 mismatches (86,726 rows); random forest selected on the validation tail; test accuracy 0.853, macro-F1 0.846 against repeat-last 0.629 and greedy 0.484; the pursuit benchmark found no benefit from anticipation (catch rates within one episode per cell, same hits in 103 of 120 paired episodes). Details: `docs/07b_next_move.md`.
+
 ## 3. What testing found, and what was changed
 
 1. **Eight first-run failures in the new tests, seven of them my own assumptions** (the fast clock is 200 ticks/s; the window loop records decisions in a file rather than in the log; an injected key acts on the next frame; human rows carry `rule:` labels; the fatal tick lists `near_enemy` after `defeat`; the dashboard has 10 headings; a full board has no room for a hunter). The tests were corrected; the code was right.
@@ -151,15 +170,17 @@ Success criterion S4 (≥ 0.20 macro-F1 over the majority baseline): met by 0.76
 3. **Word-wrap could overflow.** A single token wider than the panel was kept on its own line and spilled out. `wrap()` now breaks such a token between characters; the test asserts no rendered line is wider than the width.
 4. **Dead code removed; one removal reverted.** The glow, vignette and edge-pulse helpers of the sci-fi look (entry 8c) had no caller since the bright-arcade redesign (8e), and `save_meta` in the RL module was never called; all were deleted. I also removed the `glow_alpha` option of the HUD bar because coverage showed its branch never executed, and the suite failed in five places: the time bar uses it in the last ten seconds of the clock, which no test had rendered. The option was restored and a test now renders that state. Lesson recorded: "never executed in the suite" is not "never used".
 5. **A CLI option for testability.** `dashboard --figures-dir` lets a test build the dashboard without rewriting `reports/figures/`.
+6. **Phase 7b (2026-10-16).** The first pursuit benchmark stalled at 5 % CPU: the saved forest kept `n_jobs=-1`, so every single-row prediction spun up a thread pool (about 100 ms each). The predictor now forces single-threaded inference and hunters share one prediction per tick. The first saved forest (300 unbounded trees) was 216 MB, over GitHub's 100 MB file limit: the forest is now bounded to 120 trees of depth 12 and saved compressed (7.5 MB, 7 ms per prediction) for −0.007 validation macro-F1, measured on the validation tail, not the test rows; the 18 MB move dataset is git-ignored and rebuilt in 70 s. A first dashboard figure printed light digits on light confusion-matrix cells; fixed. Two of my test assertions were wrong (a string prefix; a registry that legitimately gained a policy) and were corrected.
 
 ## 4. Coverage
 
-25 of 38 modules are at 100 % (bounds, controller, benchmark, BFS, graph, policies, config, entities, maze, rules, state, events, features, labels, schema, predict, split, train, RL pipeline and learner, harness, profiles, app, input). The others:
+25 of 39 modules are at 100 % (bounds, controller, benchmark, BFS, graph, policies, config, entities, maze, rules, state, events, features, labels, schema, predict, split, train, RL pipeline and learner, harness, profiles, app, input). The others (after Phase 7b):
 
 | Module | Statements | Missed | Coverage | What is not executed |
 |---|---|---|---|---|
 | ui/theme.py | 107 | 7 | 93.5 % | fallback to the bundled font when no system font exists; the text-cache retry (now shadowed by the `font()` check) and the 600-entry cache flush |
-| cli.py | 199 | 6 | 97.0 % | the `play --agent` branch that opens the real window (exercised with a stubbed window during Phase 9b, outside pytest); printing invalid dataset rows when there are none |
+| cli.py | 240 | 7 | 97.1 % | the `play --agent` branch that opens the real window (exercised with a stubbed window during Phase 9b, outside pytest); printing invalid dataset rows or replay mismatches when there are none |
+| ml/next_move.py | 211 | 1 | 99.5 % | the replay loop's early exit when a log holds more actions than the game accepts (never, for a consistent log) |
 | ai/astar.py | 36 | 1 | 97.2 % | the stats counter on the unreachable-goal path |
 | dashboard/figures.py, report.py | 376 | 2 | 99.5 % | coefficient figure for a model without coefficients; "figure not available" placeholder |
 | data/dataset.py, ml/evaluate.py | 84 | 2 | 97.6 % | collecting an invalid row; impurity importance for a forest (the selected model is logistic regression) |
@@ -173,11 +194,13 @@ Success criterion S4 (≥ 0.20 macro-F1 over the majority baseline): met by 0.76
 |---|---|---|
 | `step()` on 21×15 with 2 A* hunters | 102 µs per tick | 100 ms per tick (10 ticks/s) |
 | A* start → exit on 21×15 | 0.285 ms median (BFS 0.255 ms) | < 1 ms |
-| `draw()` at 1024×768 | 2.07 ms with panel and AI vision, 0.88 ms plain | 16.7 ms (60 FPS) |
+| `draw()` at 1024×768 | 2.07 ms with panel and AI vision, 0.88 ms plain (bright-arcade look, Phase 10); 6.1 ms and 2.9 ms with the cartoon-world look of entry 13, after caching card, shadow and ground-shadow surfaces (7.5 ms before) | 16.7 ms (60 FPS) |
 | dashboard build | 1.8 s | — |
 | classifier training, full protocol | 8.0 s | — |
 | RL training, 20,000 episodes | 12 s | — |
-| test suite | 50.9 s | — |
+| next-move: replay of 360 logs / training / pursuit benchmark (Phase 7b) | 70 s / 26 s / 1 min 20 s | — |
+| next-move live prediction (120-tree forest of depth 12, single-threaded) | 7 ms, once per tick shared by all hunters | 100 ms per tick |
+| test suite | 50.9 s (Phase 10); 2 min 26 s with the Phase 7b tests | — |
 
 ## 6. Manual checks in the real window (for the learner; not executed by the assistant)
 

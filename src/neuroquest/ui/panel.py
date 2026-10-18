@@ -11,7 +11,7 @@ import pygame
 
 from neuroquest.adapt.bounds import BOUNDS
 from neuroquest.ui import theme as th
-from neuroquest.ui.theme import bar, card, icon_chip, text
+from neuroquest.ui.theme import SEP, bar, card, icon_chip, pill, text
 
 RULE_NAMES = {
     "R1_ease_heavy_damage": "Eased: heavy damage",
@@ -40,7 +40,7 @@ def short_decision(d) -> str:
         return rule_name(d.rule)
     lever = LEVER_NAMES.get(d.lever, d.lever)
     before, after = d.before[d.lever], d.after[d.lever]
-    return f"{lever} {before} -> {after}  ·  {rule_name(d.rule)}"
+    return f"{lever} {before} -> {after}{SEP}{rule_name(d.rule)}"
 
 
 def _pieces(size: int, word: str, width: int, bold: bool) -> list[str]:
@@ -101,19 +101,19 @@ def _row_bar(surface: pygame.Surface, x: int, y: int, width: int, name: str, val
 
 def draw_panel(surface: pygame.Surface, rect: pygame.Rect, state, params, prediction, fx: dict, t: float) -> None:
     inner = rect.inflate(-th.SP["md"], -th.SP["md"])
-    card(surface, inner, fill=th.SURFACE, alpha=235, radius=th.RADIUS["lg"])
+    card(surface, inner, fill=th.SURFACE, alpha=245, radius=th.RADIUS["lg"], lift=True)
     x = inner.x + th.SP["lg"]
     width = inner.width - 2 * th.SP["lg"]
     y = inner.y + th.SP["lg"]
 
     # header
-    icon_chip(surface, x + 9, y + 10, 14, th.CYAN)
+    icon_chip(surface, x + 9, y + 10, 18, th.AMBER)
     surface.blit(text(th.SIZE["title"], "AI CORE", th.TEXT, True), (x + 28, y - 1))
     y += 26
     meta = fx.get("model_meta")
     if meta:
         f1 = meta.get("test", {}).get("macro_f1")
-        line = f"{meta.get('model', '?').replace('_', ' ')}  ·  trained {str(meta.get('trained_at', ''))[:10]}" + (f"  ·  held-out F1 {f1:.2f}" if f1 is not None else "")
+        line = f"{meta.get('model', '?').replace('_', ' ')}{SEP}trained {str(meta.get('trained_at', ''))[:10]}" + (f"{SEP}held-out F1 {f1:.2f}" if f1 is not None else "")
         surface.blit(text(th.SIZE["small"], elide(th.SIZE["small"], line, width), th.TEXT_MUTED), (x, y))
     else:
         surface.blit(text(th.SIZE["small"], "no model loaded (run: neuroquest train)", th.TEXT_MUTED), (x, y))
@@ -144,11 +144,9 @@ def draw_panel(surface: pygame.Surface, rect: pygame.Rect, state, params, predic
     # adaptive difficulty
     y = _section(surface, x, y, "ADAPTIVE DIFFICULTY")
     adaptive = bool(fx.get("adaptive", False))
-    badge = text(th.SIZE["label"], "ADAPTIVE" if adaptive else "FIXED", th.BG_DEEP, True)
-    brect = pygame.Rect(x, y, badge.get_width() + 14, 18)
-    pygame.draw.rect(surface, th.CYAN if adaptive else th.TEXT_MUTED, brect, border_radius=9)
-    surface.blit(badge, (brect.x + 7, brect.y + 3))
-    y += 26
+    label = "ADAPTIVE" if adaptive else "FIXED"
+    pill(surface, pygame.Rect(x, y, text(th.SIZE["label"], label, th.ON_ACCENT, True).get_width() + 16, 20), th.CYAN if adaptive else th.TEXT_MUTED, label)
+    y += 28
     lo, hi = BOUNDS["enemy_count"]
     y = _row_bar(surface, x, y, width, "hunters", str(params.enemy_count), (params.enemy_count - lo) / (hi - lo), th.CRIMSON)
     lo, hi = BOUNDS["enemy_move_interval"]

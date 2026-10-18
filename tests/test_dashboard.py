@@ -8,6 +8,9 @@ from neuroquest.config import DifficultyParams, GameConfig
 from neuroquest.dashboard import figures as F
 from neuroquest.dashboard.report import build
 from neuroquest.data.events import EpisodeLog
+from neuroquest.ai.benchmark import pursuit_benchmark
+from neuroquest.ai.policies import Anticipator, AStarChaser
+from neuroquest.ml.next_move import NextMovePredictor, build_moves, train_next_move
 from neuroquest.ml.predict import BehaviourPredictor
 from neuroquest.rl.env import MazeEnv
 from neuroquest.rl.pipeline import run_pipeline
@@ -54,15 +57,19 @@ def test_report_builds_with_all_inputs_and_degrades_without(tmp_path, tiny_model
     pd.DataFrame(ab_compare(["aggressive", "cautious"], 1, GameConfig(), DifficultyParams(time_limit_s=40), seed0=901, predictor=predictor)).to_csv(ab_csv, index=False)
     rl_env = MazeEnv(GameConfig(width=7, height=7, loop_fraction=1.0), DifficultyParams(enemy_count=0, reward_density=0.1, time_limit_s=10), layout_seed=1)
     run_pipeline(rl_env, episodes=120, seed=0, eval_episodes=6, model_dir=tmp_path / "models", report_dir=tmp_path / "rl")
-    summary = build(root / "processed" / "episodes.csv", root / "metrics.json", decisions, ab_csv, root / "raw", tiny_model_dir, tmp_path / "dash.html", tmp_path / "figs", rl_results_path=tmp_path / "rl" / "rl_results.json", rl_curve_csv=tmp_path / "rl" / "rl_curve.csv")
-    assert set(summary["sections"]) == {"data", "model", "interpretability", "examples", "session", "decisions", "ab", "rl"}
+    build_moves(root / "raw", tmp_path / "moves.csv")
+    train_next_move(tmp_path / "moves.csv", model_dir=tmp_path / "nm-models", report_path=tmp_path / "next_move.json", seed=1, fast=True, test_fraction=0.25)
+    pd.DataFrame(pursuit_benchmark(episodes=1, seed0=9100, profiles=("cautious",), params=DifficultyParams(time_limit_s=20), policies={"astar": AStarChaser(), "anticipator": Anticipator(predictor=NextMovePredictor.load(tmp_path / "nm-models" / "next_move.joblib", tmp_path / "nm-models" / "next_move.meta.json"))})).to_csv(tmp_path / "pursuit.csv", index=False)
+    summary = build(root / "processed" / "episodes.csv", root / "metrics.json", decisions, ab_csv, root / "raw", tiny_model_dir, tmp_path / "dash.html", tmp_path / "figs", rl_results_path=tmp_path / "rl" / "rl_results.json", rl_curve_csv=tmp_path / "rl" / "rl_curve.csv", next_move_path=tmp_path / "next_move.json", pursuit_csv=tmp_path / "pursuit.csv")
+    assert set(summary["sections"]) == {"data", "model", "interpretability", "examples", "session", "decisions", "ab", "rl", "next_move"}
     html = (tmp_path / "dash.html").read_text()
-    assert html.count("<h2>") >= 10 and html.count("<img") >= 10 and "Confident and right" in html and "Q-learning" in html
+    assert html.count("<h2>") >= 11 and html.count("<img") >= 11 and "Confident and right" in html and "Q-learning" in html and "Does it help the hunters?" in html
     assert summary["examples"]["correct"] and all(r["true"] == r["predicted"] for r in summary["examples"]["correct"])
     assert all(r["true"] != r["predicted"] for r in summary["examples"]["wrong"])
 
-    empty = build(tmp_path / "none.csv", tmp_path / "none.json", tmp_path / "none.jsonl", tmp_path / "none.csv", tmp_path / "noraw", tmp_path / "nomodels", tmp_path / "empty.html", tmp_path / "figs2", rl_results_path=tmp_path / "none-rl.json", rl_curve_csv=tmp_path / "none-rl.csv")
-    assert empty["sections"] == [] and "No dataset found" in (tmp_path / "empty.html").read_text() and "No RL results" in (tmp_path / "empty.html").read_text()
+    empty = build(tmp_path / "none.csv", tmp_path / "none.json", tmp_path / "none.jsonl", tmp_path / "none.csv", tmp_path / "noraw", tmp_path / "nomodels", tmp_path / "empty.html", tmp_path / "figs2", rl_results_path=tmp_path / "none-rl.json", rl_curve_csv=tmp_path / "none-rl.csv", next_move_path=tmp_path / "none-nm.json", pursuit_csv=tmp_path / "none-p.csv")
+    text = (tmp_path / "empty.html").read_text()
+    assert empty["sections"] == [] and "No dataset found" in text and "No RL results" in text and "No next-move results" in text
 
 
 def test_rl_figures_from_tiny_real_data(tmp_path) -> None:

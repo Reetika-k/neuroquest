@@ -84,6 +84,62 @@ def search_benchmark(mazes: int = 200, width: int = 21, height: int = 15, seed0:
     return rows
 
 
+def pursuit_benchmark(
+    episodes: int = 40,
+    seed0: int = 2000,
+    profiles: tuple[str, ...] = ("aggressive", "cautious", "explorer"),
+    kinds: tuple[str, ...] = ("astar", "anticipator"),
+    config: GameConfig | None = None,
+    params: DifficultyParams | None = None,
+    policies=None,
+) -> list[dict]:
+    """Hunters of each kind pursue *moving* scripted players on the same seeded mazes (Phase 7b):
+    tick of the first hit, hits per episode and the player's outcome. The seeds start at 2000,
+    away from every other experiment's seeds."""
+    from neuroquest.sim.harness import run_episode  # local import: sim depends on ml, benchmark must stay importable alone
+    from neuroquest.sim.profiles import PROFILES
+
+    base, params = config or GameConfig(), params or DifficultyParams()
+    rows: list[dict] = []
+    for kind in kinds:
+        for profile in profiles:
+            for i in range(episodes):
+                seed = seed0 + i
+                log = run_episode(PROFILES[profile], replace(base, enemy_kind=kind), params, seed, profile_name=profile, policies=policies)
+                hits = [e.t for e in log.events if e.type == "damage"]
+                rows.append({"kind": kind, "profile": profile, "seed": seed, "first_contact": hits[0] if hits else "", "hits": len(hits), "outcome": log.meta["outcome"], "ticks": log.meta["ticks"], "score": log.meta["score"]})
+    return rows
+
+
+def summarize_pursuit(rows: list[dict]) -> dict[str, dict[str, dict]]:
+    out: dict[str, dict[str, dict]] = {}
+    for r in rows:
+        out.setdefault(r["kind"], {}).setdefault(r["profile"], []).append(r)
+    summary: dict[str, dict[str, dict]] = {}
+    for kind, by_profile in out.items():
+        summary[kind] = {}
+        for profile, sub in by_profile.items():
+            caught = [r for r in sub if r["first_contact"] != ""]
+            summary[kind][profile] = {
+                "episodes": len(sub),
+                "caught": len(caught),
+                "catch_rate": len(caught) / len(sub),
+                "median_first_contact": statistics.median(r["first_contact"] for r in caught) if caught else None,
+                "mean_hits": statistics.mean(r["hits"] for r in sub),
+                "player_win_rate": statistics.mean(r["outcome"] == "won" for r in sub),
+            }
+    return summary
+
+
+def format_pursuit(summary: dict[str, dict[str, dict]]) -> str:
+    lines = [f"Pursuit: hunters vs moving scripted players, same seeds per cell", f"  {'kind':<13}{'profile':<12}{'caught':>8}{'median 1st hit':>16}{'mean hits':>11}{'player wins':>13}"]
+    for kind, by_profile in summary.items():
+        for profile, s in by_profile.items():
+            med = f"{s['median_first_contact']:.0f}" if s["median_first_contact"] is not None else "-"
+            lines.append(f"  {kind:<13}{profile:<12}{s['caught']:>3}/{s['episodes']:<4}{med:>16}{s['mean_hits']:>11.2f}{s['player_win_rate']:>13.0%}")
+    return "\n".join(lines)
+
+
 def summarize_chase(rows: list[dict]) -> dict[str, dict]:
     out: dict[str, dict] = {}
     for kind in ("astar", "random"):

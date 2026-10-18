@@ -23,6 +23,7 @@ NeuroQuest is a 2D maze survival game. The player moves through a seeded maze, c
 - a **scikit-learn classifier** reads the player's style (aggressive, cautious, explorer) from features computed on the game's own event log, live, from three seconds into an episode;
 - a **rule-based adaptive controller** eases or tightens one difficulty knob at a time, inside fixed bounds, and records the rule, the inputs and a plain-language reason for every decision;
 - a **tabular Q-learning agent** learns to play a small board from the rules alone and is compared with random and scripted baselines on held-out episodes;
+- a **next-move model** predicts the player's next action from what the game shows, evaluated on later episodes against naive and hand-written baselines, and drives an optional anticipating hunter whose measured effect is nil and reported as such;
 - an **explainability dashboard** and an in-game intelligence panel show every prediction, decision and evaluation result, including the model's confident mistakes.
 
 The project's point is to demonstrate AI/ML that is honest: every number is produced by a seeded, reproducible run; nothing is hard-coded to look smart; limitations are stated next to results.
@@ -47,6 +48,7 @@ Games that claim to "adapt to the player" usually hide a few thresholds behind t
 | Player-style classifier | Logistic regression selected by grouped cross-validation over random forest, KNN and three baselines; live prediction in the footer and panel | `ml/`, `ui/app.py` |
 | Adaptive difficulty | Seven rules, four bounded knobs, one step per decision, every decision logged with its reason; fixed-vs-adaptive A/B harness | `adapt/`, `sim/ab.py` |
 | Q-learning agent | Gym-style environment over the same rules; ε-greedy tabular Q-learning; five-agent comparison; `play --agent` to watch it | `rl/` |
+| Next-move model | Rows replayed from the logs through the rules; temporal split; majority, repeat-last and greedy baselines vs logistic regression and random forest; an anticipating hunter and a pursuit benchmark | `ml/next_move.py`, `ai/policies.py`, `ai/benchmark.py` |
 | Explainability | In-game panel (I key), AI vision (T key), and a self-contained dashboard built from recorded files only | `ui/panel.py`, `dashboard/` |
 | Honest process | Phase gates, an A–I report per step, a 16-entry development log, a test report with expected and actual results | `docs/` |
 
@@ -143,9 +145,25 @@ With 40 episodes per cell the noise on a win-rate difference is about ±20 point
 
 The agent learned to give up the two crystals on the hunter's side of the board for safety, and reached the highest return; a second training seed reproduced it. On a board it never saw it wins nothing: a tabular agent memorises one board. The first board tried, with the game's default braiding, was a single corridor where every agent took exactly one hit; the board was chosen by measuring 36 layouts for a hazard that is both real and avoidable. On another layout the discounted optimum really was to take the hit; that counter-example is kept in `docs/09b_rl.md`.
 
-### 7.5 Explainability (Phase 9)
+### 7.5 Predictive model: the player's next move (Phase 7b, extension)
 
-The in-game panel shows the three class probabilities, the model's metadata, the difficulty knobs against their bounds, the last decision with its recorded reason and the recent decisions. The dashboard (`neuroquest/reports/dashboard.html`) has eight sections built from recorded files only: data, model evaluation, what the model looks at, correct and incorrect predictions with their features, a session as the model saw it, adaptive decisions with rule markers, fixed vs adaptive, and the RL agent; a missing input makes its section say so.
+A second supervised model predicts the player's next action (up, down, left, right, stay) from what the game shows at that tick: the last three actions, which neighbouring cells are open or already visited, the direction and distance of the nearest crystal, the portal and the nearest hunter, the shortest-path direction to the nearest crystal and to the portal, crystals left and health (43 features). Rows are built by replaying every simulated episode log through the real rules (360 episodes, 86,726 ticks, 0 replay mismatches); the target is self-labelled, so human play could train this model directly once there is enough of it.
+
+**Temporal split.** Episodes are ordered by seed, the order they were generated: seeds 0–95 train (69,976 rows), seeds 96–119 test (16,750 rows). The model was chosen on the last 20 % of the training episodes (15,206 rows), never on the test rows.
+
+| Model | Test accuracy | Test macro-F1 | aggressive | cautious | explorer |
+|---|---|---|---|---|---|
+| Majority ("stay") | 0.315 | 0.096 | 0.09 | 0.43 | 0.27 |
+| Repeat the last move | 0.662 | 0.629 | 0.54 | 0.71 | 0.65 |
+| Greedy rule (shortest path to the nearest crystal, else the portal) | 0.510 | 0.484 | **0.79** | 0.41 | 0.52 |
+| Logistic regression | 0.829 | 0.822 | 0.76 | 0.84 | 0.84 |
+| **Random forest (selected)** | **0.853** | **0.846** | 0.78 | **0.86** | **0.88** |
+
+The forest beats the strongest baseline by 0.22 macro-F1 and every class is predicted with F1 between 0.82 and 0.89. It is bounded to 120 trees of depth 12 (7.5 MB compressed) because an unbounded forest pickled to 216 MB; the bound cost 0.007 validation macro-F1 and was chosen on the validation tail. Its gain is on cautious and explorer players, whose moves depend on the hunters and on which cells they have seen; for aggressive players, who walk the shortest path to crystals by construction, the hand-written greedy rule is one point better, which is reported as such. The most informative feature is whether the player stayed still on the previous tick (cautious players wait in runs), then which neighbours are open. The model also drives an optional *anticipator* hunter that heads for the player's predicted next cell instead of their current one. Measured against plain A* hunters on 40 seeded episodes per player profile, it made no difference: catch rates within one episode per cell, the same number of hits in 103 of 120 paired episodes, a mean difference of −0.04 hits. The hunters move once every four ticks, so aiming one step ahead rarely changes their next step. A good predictor is not automatically a better hunter, and the result is recorded as such (`docs/07b_next_move.md`).
+
+### 7.6 Explainability (Phase 9)
+
+The in-game panel shows the three class probabilities, the model's metadata, the difficulty knobs against their bounds, the last decision with its recorded reason and the recent decisions. The dashboard (`neuroquest/reports/dashboard.html`) has nine sections built from recorded files only: data, model evaluation, what the model looks at, correct and incorrect predictions with their features, a session as the model saw it, adaptive decisions with rule markers, fixed vs adaptive, the RL agent, and the next-move model with the pursuit benchmark; a missing input makes its section say so.
 
 ## 8. Dataset description
 
@@ -167,7 +185,7 @@ The learner directed the assistant with one complete brief, then with short appr
 
 ## 10. Testing and improvement report
 
-377 tests pass in 50.9 s with 99.1 % line coverage, all headless: unit tests per module, integration tests with the real saved model (play → log → dataset → prediction → decisions; dashboard from the repository data; byte-level reproducibility), ten gameplay scenarios that drive the real window loop with a scripted player and injected keys (win, both losses, restart, pause, keys, quit, window close, menu, a live difficulty change), fourteen edge cases, one regression test per fixed bug, and every CLI command. The suite found and fixed two robustness problems in Phase 10 (a font cache that died on re-initialisation; word-wrap that let an overlong token spill out of the panel) and reverted one wrong deletion. The report with test case, expected result, actual result, status and improvement is `reports/test_report.md`; the plan and requirement traceability are in `docs/10_testing.md`.
+388 tests pass in three to five minutes with 99.1 % line coverage (377 in 50.9 s at the Phase 10 run; the Phase 7b tests train small forests; the figure was re-confirmed after the cartoon-world interface of entry 13), all headless: unit tests per module, integration tests with the real saved model (play → log → dataset → prediction → decisions; dashboard from the repository data; byte-level reproducibility), ten gameplay scenarios that drive the real window loop with a scripted player and injected keys (win, both losses, restart, pause, keys, quit, window close, menu, a live difficulty change), fourteen edge cases, one regression test per fixed bug, and every CLI command. The suite found and fixed two robustness problems in Phase 10 (a font cache that died on re-initialisation; word-wrap that let an overlong token spill out of the panel) and reverted one wrong deletion. The report with test case, expected result, actual result, status and improvement is `reports/test_report.md`; the plan and requirement traceability are in `docs/10_testing.md`.
 
 ## 11. Working prototype and results at a glance
 
@@ -180,10 +198,11 @@ The learner directed the assistant with one complete brief, then with short appr
 | Bounded, fully logged adaptation (S6) | 1,000 random decisions in bounds; every decision carries inputs, rule and reason |
 | Fixed vs adaptive compared with no claims beyond the numbers (S7) | table in 7.3, "within noise" stated |
 | RL agent vs random on 100 held-out episodes with a learning curve (S12) | table in 7.4; `reports/rl_curve.csv`; dashboard section 8 |
-| ≥ 40 tests, all executed, in a report (S9) | 377; `reports/test_report.md` |
+| Next-move model with a temporal split against majority and repeat-last baselines (S11) | table in 7.5: 0.846 macro-F1 vs 0.629 and 0.096; `reports/next_move_metrics.json`; dashboard section 9 |
+| ≥ 40 tests, all executed, in a report (S9) | 388; `reports/test_report.md` |
 | Every Phase 11 document exists; the prompt log records real iterations only (S10) | this document set |
 
-Screenshots and animations: `docs/screenshots/neuroquest-play.gif` (the cautious profile on the default board, panel and AI vision open, two difficulty changes), `docs/screenshots/neuroquest-agent.gif` (the agent), `phase9-dashboard.png`, `phase9b-*.png`, `ui4-*.png`.
+Screenshots and animations: `docs/screenshots/neuroquest-play.gif` (the cautious profile on the default board, panel and AI vision open, two difficulty changes), `docs/screenshots/neuroquest-agent.gif` (the agent), `phase9-dashboard.png`, `phase9b-*.png`, `ui5-*.png` (the cartoon-world interface of entry 13; `ui4-*.png` show the earlier bright-arcade look).
 
 ## 12. Tools and technologies
 
@@ -214,7 +233,7 @@ No image or audio assets; no cloud services, databases or paid APIs.
 
 **Limitations.** The classifier recognises simulated personalities; its accuracy on humans is unknown until labelled human data exists. Its probabilities are not calibrated, and early in a quiet episode explorer and aggressive are indistinguishable. The controller is safe and traceable, not shown to improve outcomes; equalising outcomes across styles would need stronger or earlier easing for aggressive players, who die within about 10 s. The agent learns one small board under partial observation and does not transfer; the hunter is deterministic, so 100 evaluation seeds are 20 situations. No test opens a real window. The game is desktop-only.
 
-**Future enhancements.** Self-reported labels from play-testers and a human-vs-simulated accuracy measurement; probability calibration; the optional next-move model (Phase 7b: sequence features, temporal split, majority-direction and repeat-last-move baselines); a learned adaptation policy compared with the rule table in simulation; function approximation for the agent so it can generalise across boards; a browser build of the game-only part with pygbag; sound and sprite art.
+**Future enhancements.** Self-reported labels from play-testers and a human-vs-simulated accuracy measurement; probability calibration; training the next-move model on human play (its target is self-labelled, so only volume is missing); a learned adaptation policy compared with the rule table in simulation; function approximation for the agent so it can generalise across boards; a browser build of the game-only part with pygbag; sound and sprite art.
 
 ## 15. Setup and execution
 
@@ -239,4 +258,4 @@ A clone contains the processed dataset, the trained models and every report; the
 
 ## 17. Final outcome
 
-A playable game whose five AI components are each backed by a measured result, a reproducible pipeline from play to prediction to decision, an agent that learned from the rules alone, a dashboard that shows the evidence including the failures, 377 executed tests, and a development record in which the mistakes are written down next to the fixes.
+A playable game whose AI components are each backed by a measured result, a reproducible pipeline from play to prediction to decision, two supervised models evaluated on data generated after their training data, an agent that learned from the rules alone, a dashboard that shows the evidence including the failures and one negative result, 388 executed tests, and a development record in which the mistakes are written down next to the fixes.

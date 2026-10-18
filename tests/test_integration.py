@@ -83,7 +83,7 @@ def test_dashboard_builds_from_the_repository_data(tmp_path) -> None:
     present = set(summary["sections"])
     assert {"data", "model", "interpretability", "examples", "session"} <= present
     html = (tmp_path / "dash.html").read_text()
-    assert html.count("<h2>") == 10 and (tmp_path / "dash.html").stat().st_size > 100_000  # sections 1–8, Limitations, Reproduce
+    assert html.count("<h2>") == 11 and (tmp_path / "dash.html").stat().st_size > 100_000  # sections 1–9, Limitations, Reproduce
     missing = {"decisions", "ab", "rl"} - present
     assert not missing, f"sections missing because their input files are absent: {missing}"
 

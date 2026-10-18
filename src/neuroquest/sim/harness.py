@@ -5,11 +5,12 @@ from __future__ import annotations
 
 import random
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict
 from pathlib import Path
 
 from neuroquest.adapt.controller import AdaptiveController
+from neuroquest.ai.policies import EnemyPolicy
 from neuroquest.config import DifficultyParams, GameConfig
 from neuroquest.core.rules import new_game, reconcile, step
 from neuroquest.data.events import EpisodeLog, EventLogger
@@ -31,12 +32,14 @@ def run_episode(
     adaptive: bool = False,
     predictor: BehaviourPredictor | None = None,
     controller: AdaptiveController | None = None,
+    policies: Mapping[str, EnemyPolicy] | None = None,
 ) -> EpisodeLog:
     """Play one seeded episode to the end (or ``max_ticks``) and return its log.
 
     With ``adaptive=True`` the saved classifier predicts the style on the usual schedule and the
     controller may change the difficulty every 5 s; every decision and parameter change is
     recorded in the log's meta (``decisions``, ``params_history``, ``params_final``).
+    ``policies`` overrides the enemy policy registry (used by benchmarks that inject a model).
     """
     policy_rng = random.Random(seed)
     game_rng = random.Random(seed + 10_007)  # enemies' randomness, independent of the player's
@@ -52,7 +55,7 @@ def run_episode(
     history = [{"t": 0, **asdict(params)}]
     while not state.outcome.is_over and (max_ticks is None or state.tick < max_ticks):
         action = policy.act(state, params, policy_rng)
-        state, events = step(state, action, params, game_rng)
+        state, events = step(state, action, params, game_rng, policies)
         logger.extend(events)
         if adaptive and not state.outcome.is_over:
             if state.tick >= PREDICT_AFTER_TICKS and state.tick % PREDICT_EVERY_TICKS == 0:

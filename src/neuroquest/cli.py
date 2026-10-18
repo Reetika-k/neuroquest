@@ -13,6 +13,9 @@ Usage::
     python -m neuroquest dashboard             # figures + reports/dashboard.html from recorded data (Phase 9)
     python -m neuroquest rl-train              # Q-learning agent vs baselines on the RL board (Phase 9b)
     python -m neuroquest play --agent          # watch the trained agent play its board (Phase 9b)
+    python -m neuroquest build-moves           # episode logs → data/processed/moves.csv (Phase 7b)
+    python -m neuroquest train-next-move       # next-move model vs baselines, temporal split (Phase 7b)
+    python -m neuroquest benchmark-pursuit     # anticipating hunters vs plain A* against moving players (Phase 7b)
 """
 
 from __future__ import annotations
@@ -103,6 +106,46 @@ def cmd_play(args: argparse.Namespace) -> int:
     print(f"outcome: {outcome.value}")
     if log_dir is not None:
         print(f"episode logged to {log_dir}/ (profile=human); use --no-log to disable")
+    return 0
+
+
+def cmd_build_moves(args: argparse.Namespace) -> int:
+    """Replay every simulated episode log and write the next-move rows."""
+    from pathlib import Path
+
+    from neuroquest.ml.next_move import build_moves
+
+    df, report = build_moves(Path(args.raw), Path(args.out))
+    print(f"episodes replayed: {report['episodes']}  rows: {report['rows']}  skipped (human/adaptive): {len(report['skipped'])}  replay failed: {len(report['replay_failed'])}")
+    for name in report["replay_failed"][:10]:
+        print(f"  replay mismatch: {name}")
+    print("targets: " + ", ".join(f"{k} {v}" for k, v in report["targets"].items()))
+    print(f"written {args.out}")
+    return 0
+
+
+def cmd_train_next_move(args: argparse.Namespace) -> int:
+    """Train and compare next-move predictors with a temporal split; save the best."""
+    from pathlib import Path
+
+    from neuroquest.ml.next_move import format_next_move_report, train_next_move
+
+    report = train_next_move(Path(args.data), model_dir=Path(args.model_dir), report_path=Path(args.report), seed=args.seed, fast=args.fast)
+    print(format_next_move_report(report))
+    print(f"model saved to {report['artifacts']['model']}; full report in {args.report}")
+    return 0
+
+
+def cmd_benchmark_pursuit(args: argparse.Namespace) -> int:
+    """Anticipating hunters (next-move model) vs plain A* hunters against moving scripted players."""
+    from pathlib import Path
+
+    from neuroquest.ai.benchmark import format_pursuit, pursuit_benchmark, summarize_pursuit, write_csv
+
+    rows = pursuit_benchmark(episodes=args.episodes, seed0=args.seed)
+    write_csv(rows, Path(args.out))
+    print(format_pursuit(summarize_pursuit(rows)))
+    print(f"rows written to {args.out}")
     return 0
 
 
@@ -233,7 +276,7 @@ def build_parser() -> argparse.ArgumentParser:
     play.add_argument("--reward-density", type=float, default=0.10, help="fraction of open cells with a reward")
     play.add_argument("--enemies", type=int, default=2, help="number of enemies")
     play.add_argument("--enemy-interval", type=int, default=4, help="ticks between enemy moves (smaller is faster)")
-    play.add_argument("--enemy-kind", choices=["astar", "random"], default="astar", help="enemy movement policy")
+    play.add_argument("--enemy-kind", choices=["astar", "random", "anticipator"], default="astar", help="enemy movement policy (anticipator uses the next-move model)")
     play.add_argument("--no-log", action="store_true", help="do not save the episode log to data/raw")
     play.add_argument("--fixed", action="store_true", help="keep the difficulty fixed (no adaptive controller)")
     play.add_argument("--no-panel", action="store_true", help="start with the AI intelligence panel closed (I toggles it)")
@@ -265,8 +308,27 @@ def build_parser() -> argparse.ArgumentParser:
     sim.add_argument("--enemies", type=int, default=2)
     sim.add_argument("--enemy-interval", type=int, default=4)
     sim.add_argument("--reward-density", type=float, default=0.10)
-    sim.add_argument("--enemy-kind", choices=["astar", "random"], default="astar")
+    sim.add_argument("--enemy-kind", choices=["astar", "random", "anticipator"], default="astar")
     sim.set_defaults(func=cmd_simulate)
+
+    moves = sub.add_parser("build-moves", help="replay episode logs → next-move rows (data/processed/moves.csv)")
+    moves.add_argument("--raw", default="data/raw", help="folder with *.jsonl episode logs")
+    moves.add_argument("--out", default="data/processed/moves.csv")
+    moves.set_defaults(func=cmd_build_moves)
+
+    nm = sub.add_parser("train-next-move", help="next-move model vs majority / repeat-last / greedy baselines, temporal split")
+    nm.add_argument("--data", default="data/processed/moves.csv")
+    nm.add_argument("--model-dir", default="models")
+    nm.add_argument("--report", default="reports/next_move_metrics.json")
+    nm.add_argument("--seed", type=int, default=42)
+    nm.add_argument("--fast", action="store_true", help="fewer trees / repeats (for quick checks)")
+    nm.set_defaults(func=cmd_train_next_move)
+
+    pursuit = sub.add_parser("benchmark-pursuit", help="anticipating hunters vs plain A* hunters against moving scripted players")
+    pursuit.add_argument("--episodes", type=int, default=40, help="seeded episodes per profile and hunter kind")
+    pursuit.add_argument("--seed", type=int, default=2000, help="first seed (2000+ are used by no other experiment)")
+    pursuit.add_argument("--out", default="reports/pursuit_benchmark.csv")
+    pursuit.set_defaults(func=cmd_benchmark_pursuit)
 
     build = sub.add_parser("build-dataset", help="raw logs → validated feature CSV + schema file")
     build.add_argument("--raw", default="data/raw", help="folder with *.jsonl episode logs")
