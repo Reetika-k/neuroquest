@@ -10,3 +10,5 @@ dist/
 .DS_Store
 # raw gameplay logs can grow large; processed datasets and small models are tracked
 data/raw/*.jsonl
+# the next-move rows (18 MB, one per tick) are rebuilt from the logs in ~70 s: neuroquest build-moves
+data/processed/moves.csv

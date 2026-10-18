@@ -12,7 +12,7 @@ git commit -m "<what changed>"
 git push
 ```
 
-`.gitignore` excludes the virtual environment and `data/raw/` (episode logs are regenerable from their seeds). The processed dataset, the trained models, the reports and the dashboard HTML are tracked, so a fresh clone can play, predict, adapt and open the dashboard without re-running anything.
+`.gitignore` excludes the virtual environment, `data/raw/` (episode logs are regenerable from their seeds) and `data/processed/moves.csv` (18 MB of next-move rows, rebuilt from the logs by `neuroquest build-moves`). The episode dataset, the trained models, the reports and the dashboard HTML are tracked, so a fresh clone can play, predict, adapt, watch the agents and open the dashboard without re-running anything.
 
 ## 2. Host the dashboard with GitHub Pages
 

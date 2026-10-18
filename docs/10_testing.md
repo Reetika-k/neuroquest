@@ -19,7 +19,7 @@ Honesty rules: a test is only reported with the status of an executed run; a fai
 
 ## 2. Result
 
-**377 passed, 0 failed, 0 skipped in 50.9 s; 99.1 % line coverage** (26 of 2,955 statements not executed, each listed and explained in the report). The suite runs headless and needs no display.
+**377 passed, 0 failed, 0 skipped in 50.9 s; 99.1 % line coverage** (26 of 2,955 statements not executed, each listed and explained in the report) at the Phase 10 run on 2026-10-15. After the Phase 7b extension (2026-10-16): **388 passed in 2.5–3 min; 99.2 %** (28 of 3,337). After the cartoon-world interface (2026-10-17, entry 13): **388 passed; 99.1 %** (31 of 3,397), every pixel contract intact. The suite runs headless and needs no display.
 
 ## 3. Requirement traceability
 
@@ -37,6 +37,7 @@ Honesty rules: a test is only reported with the status of an executed run; a fai
 | FR10 bounded, logged adaptation | test_adapt (1,000 steps in bounds), test_ab, test_scenarios (live ease), test_integration |
 | FR11 harness, fixed vs adaptive | test_ab, test_cli (ab-test) |
 | FR12, FR15 dashboard | test_dashboard, test_integration (all sections from repo data), test_edge_cases |
+| FR13, S11 next-move model, temporal split, baselines | test_next_move (replay, split, baselines, training, predictor, anticipator, pursuit), test_cli (build-moves, train-next-move, benchmark-pursuit); results in `docs/07b_next_move.md` |
 | FR14 RL environment and agent | test_env, test_qlearning, test_regressions (board hazard), test_cli (rl-train) |
 | S1–S4, S6, S7, S9, S12 | test_astar, test_benchmark, reproducibility tests, ML table in the report, test_adapt, test_ab, this suite (≥ 40 cases), RL results |
 | S5, S8 | headless equivalents pass; the look itself is in the manual checklist of the report |

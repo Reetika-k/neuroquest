@@ -99,6 +99,8 @@ def build(
     figures_dir: Path = Path("reports/figures"),
     rl_results_path: Path = Path("reports/rl_results.json"),
     rl_curve_csv: Path = Path("reports/rl_curve.csv"),
+    next_move_path: Path = Path("reports/next_move_metrics.json"),
+    pursuit_csv: Path = Path("reports/pursuit_benchmark.csv"),
 ) -> dict:
     summary: dict = {"sections": [], "figures": []}
     parts: list[str] = []
@@ -254,15 +256,46 @@ def build(
     else:
         parts.append("<p class='muted'>No RL results: run <code>neuroquest rl-train</code>.</p>")
 
+    # ---- next-move model ----
+    parts.append("<h2>9. Next-move model</h2>")
+    nm = json.loads(next_move_path.read_text()) if next_move_path.exists() else None
+    if nm:
+        p = F.fig_next_move(nm, figures_dir / "dash_next_move.png")
+        if p:
+            summary["figures"].append(p)
+        s, d, sel = nm["split"], nm["data"], nm["selected"]["model"]
+        m = nm["models"]
+        best_baseline = max((n for n in ("majority", "repeat_last", "greedy") if n in m), key=lambda n: m[n]["test"]["macro_f1"])
+        verdict = "beats" if m[sel]["test"]["macro_f1"] > m[best_baseline]["test"]["macro_f1"] else "does not beat"
+        parts.append(
+            f"<p>A second supervised model predicts the player's <b>next action</b> (up, down, left, right, stay) from what the game shows at that tick: the last three actions, open and visited neighbours, the direction and distance of the nearest crystal, the portal and the nearest hunter, and the shortest-path direction to the nearest crystal and to the portal. "
+            f"Rows come from replaying {d['episodes']} simulated episodes through the real rules ({d['rows']} ticks). <b>Temporal split:</b> episodes are ordered by seed; seeds {s['train_seeds'][0]}–{s['train_seeds'][1]} train ({s['train_rows']} rows), seeds {s['test_seeds'][0]}–{s['test_seeds'][1]} test ({s['test_rows']} rows); the model was chosen on the last {s['validation_rows']} training rows, never on the test rows.</p>"
+            + _img(p)
+            + f"<div class='card'>Selected: <b>{F.NM_LABELS.get(sel, sel)}</b>, test accuracy {m[sel]['test']['accuracy']:.3f}, macro-F1 {m[sel]['test']['macro_f1']:.3f}. It {verdict} the strongest hand-written baseline ({F.NM_LABELS.get(best_baseline, best_baseline)}: accuracy {m[best_baseline]['test']['accuracy']:.3f}, macro-F1 {m[best_baseline]['test']['macro_f1']:.3f}); majority {m['majority']['test']['macro_f1']:.3f}, repeat-last {m['repeat_last']['test']['macro_f1']:.3f}.</div>"
+        )
+        rows = [{"model": F.NM_LABELS.get(n, n), "acc": a["test"]["accuracy"], "f1": a["test"]["macro_f1"], **{p: v for p, v in a["per_profile_accuracy"].items()}} for n, a in m.items()]
+        profiles = sorted(m[sel]["per_profile_accuracy"])
+        parts.append(_table(rows, [("model", "model"), ("acc", "test accuracy"), ("f1", "test macro-F1")] + [(p, f"{p} acc.") for p in profiles]))
+        if pursuit_csv.exists():
+            pr = pd.read_csv(pursuit_csv)
+            g = pr.assign(caught=pr["first_contact"].notna()).groupby(["kind", "profile"]).agg(episodes=("seed", "size"), caught=("caught", "mean"), hits=("hits", "mean"), wins=("outcome", lambda o: (o == "won").mean())).reset_index()
+            prow = [{"kind": r["kind"], "profile": r["profile"], "caught": f"{r['caught']:.0%}", "hits": r["hits"], "wins": f"{r['wins']:.0%}"} for _, r in g.iterrows()]
+            n = int(g["episodes"].min())
+            parts.append(f"<p style='margin-top:14px'><b>Does it help the hunters?</b> Hunters that head for the player's <i>predicted</i> next cell (<code>anticipator</code>) against plain A* hunters, on the same {n} seeded episodes per cell, against moving scripted players:</p>" + _table(prow, [("kind", "hunter"), ("profile", "player"), ("caught", "episodes with a hit"), ("hits", "mean hits"), ("wins", "player win rate")]) + "<p class='muted'>With this many episodes a difference of a few points is within noise; read the hits column as the main signal.</p>")
+        summary["sections"].append("next_move")
+    else:
+        parts.append("<p class='muted'>No next-move results: run <code>neuroquest build-moves</code> and <code>neuroquest train-next-move</code>.</p>")
+
     # ---- limitations ----
-    parts.append("<h2>9. Limitations</h2><div class='card'><ul>"
+    parts.append("<h2>10. Limitations</h2><div class='card'><ul>"
                  "<li>The classifier recognises <b>simulated</b> personalities; human play may differ. Human rows are kept separate so the gap can be measured as they accumulate.</li>"
                  "<li>Early in a quiet episode an explorer and an aggressive player look alike (no enemy met yet); the model is confidently wrong there, and its probabilities are not calibrated.</li>"
                  "<li>One split seed and 360 episodes: quote scores with the ±0.015 CV spread in mind.</li>"
                  "<li>The adaptive controller is rule-based with reasoned, untuned thresholds; its effect on humans is untested, and on simulated players it is safe but not shown to improve outcomes.</li>"
                  "<li>The Q-learning agent learns one small board with one hunter; it sees a partial observation and its table does not transfer to other boards. Its scores are a comparison on that board, not a claim about the full game.</li>"
+                 "<li>The next-move model is trained and tested on simulated players whose decisions follow written rules; its accuracy on human play is unknown, and the hand-written greedy rule is a strong competitor for a reason.</li>"
                  "</ul></div>")
-    parts.append("<h2>Reproduce</h2><div class='card'><code>neuroquest simulate</code> → <code>build-dataset</code> → <code>train</code> → <code>ab-test</code> → <code>rl-train</code> → <code>dashboard</code>. Figures are written to <code>reports/figures/dash_*.png</code>; this file embeds them.</div>")
+    parts.append("<h2>Reproduce</h2><div class='card'><code>neuroquest simulate</code> → <code>build-dataset</code> → <code>train</code> → <code>ab-test</code> → <code>rl-train</code> → <code>build-moves</code> → <code>train-next-move</code> → <code>benchmark-pursuit</code> → <code>dashboard</code>. Figures are written to <code>reports/figures/dash_*.png</code>; this file embeds them.</div>")
 
     out_html.parent.mkdir(parents=True, exist_ok=True)
     out_html.write_text(f"<!doctype html><html><head><meta charset='utf-8'><title>NeuroQuest — AI dashboard</title><style>{CSS}</style></head><body><main>{''.join(parts)}</main></body></html>")

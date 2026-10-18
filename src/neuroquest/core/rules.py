@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 from neuroquest.config import REWARD_VALUE, DifficultyParams, GameConfig
 from neuroquest.core.entities import Enemy, Player
 from neuroquest.core.maze import Cell, Maze, manhattan
-from neuroquest.core.state import Action, Event, GameState, Outcome
+from neuroquest.core.state import RECENT_ACTIONS, Action, Event, GameState, Outcome
 
 if TYPE_CHECKING:  # the Protocol lives in ai/; importing it here at runtime would create a cycle
     from neuroquest.ai.policies import EnemyPolicy
@@ -100,6 +100,7 @@ def step(
     tick = state.tick + 1
     events: list[Event] = []
     player, rewards, visited, score = state.player, state.rewards, state.visited, state.score
+    recent = (state.recent_actions + (action,))[-RECENT_ACTIONS:]
     enemies_before = state.enemies
     distance_before = min_enemy_distance(player.pos, enemies_before)
     moved = False
@@ -122,7 +123,7 @@ def step(
 
     if player.pos == state.exit:
         events.append(Event(tick, "exit", player.pos, {"score": score}))
-        won = replace(state, player=player, rewards=rewards, visited=visited, tick=tick, score=score, outcome=Outcome.WON)
+        won = replace(state, player=player, rewards=rewards, visited=visited, tick=tick, score=score, outcome=Outcome.WON, recent_actions=recent)
         return won, events
 
     enemies = enemies_before
@@ -153,7 +154,7 @@ def step(
         events.append(Event(tick, "timeout", player.pos, {"score": score}))
 
     next_state = replace(
-        state, player=player, rewards=rewards, visited=visited, enemies=enemies, tick=tick, score=score, outcome=outcome
+        state, player=player, rewards=rewards, visited=visited, enemies=enemies, tick=tick, score=score, outcome=outcome, recent_actions=recent
     )
     return next_state, events
 

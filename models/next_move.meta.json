@@ -1,0 +1,88 @@
+{
+  "model": "random_forest",
+  "features": [
+    "prev1_up",
+    "prev1_down",
+    "prev1_left",
+    "prev1_right",
+    "prev1_stay",
+    "prev2_up",
+    "prev2_down",
+    "prev2_left",
+    "prev2_right",
+    "prev2_stay",
+    "prev3_up",
+    "prev3_down",
+    "prev3_left",
+    "prev3_right",
+    "prev3_stay",
+    "open_up",
+    "open_down",
+    "open_left",
+    "open_right",
+    "visited_up",
+    "visited_down",
+    "visited_left",
+    "visited_right",
+    "reward_dr",
+    "reward_dc",
+    "reward_dist",
+    "exit_dr",
+    "exit_dc",
+    "exit_dist",
+    "enemy_dr",
+    "enemy_dc",
+    "enemy_dist",
+    "rewards_left",
+    "health",
+    "near_enemy",
+    "path_reward_up",
+    "path_reward_down",
+    "path_reward_left",
+    "path_reward_right",
+    "path_exit_up",
+    "path_exit_down",
+    "path_exit_left",
+    "path_exit_right"
+  ],
+  "classes": [
+    "down",
+    "left",
+    "right",
+    "stay",
+    "up"
+  ],
+  "trained_at": "2026-10-16T04:46:33+00:00",
+  "sklearn": "1.9.1",
+  "data": {
+    "path": "data/processed/moves.csv",
+    "rows": 86726,
+    "episodes": 360,
+    "targets": {
+      "stay": 30832,
+      "right": 15979,
+      "down": 14774,
+      "left": 12691,
+      "up": 12450
+    }
+  },
+  "split": {
+    "by": "seed order (temporal)",
+    "test_fraction": 0.2,
+    "train_rows": 69976,
+    "test_rows": 16750,
+    "train_seeds": [
+      0,
+      95
+    ],
+    "test_seeds": [
+      96,
+      119
+    ],
+    "validation_rows": 15206
+  },
+  "test": {
+    "accuracy": 0.8534925373134329,
+    "macro_f1": 0.8460072706815873
+  }
+}

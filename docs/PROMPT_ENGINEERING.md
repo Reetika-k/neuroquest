@@ -29,6 +29,7 @@ That structure did most of the work. Each phase began with the assistant reading
 | 9b RL agent | "9b" (choosing between 9b and Phase 10) | Environment, Q-learning, five-agent comparison, dashboard section 8 (entry 9b) |
 | 10 Testing | "approved" | 38 new tests, two robustness fixes, the test report (entry 10) |
 | 11 Documentation | "approved" | This documentation set |
+| 7b Next-move model (after delivery) | "phase 7b" | Replay-based move rows, temporal split, baselines vs models, an anticipating hunter, a pursuit benchmark with a negative result, dashboard section 9 (entry 12) |
 
 ## 3. What worked
 
@@ -58,6 +59,9 @@ That structure did most of the work. Each phase began with the assistant reading
 | 9b | The first RL board was a single corridor: every agent took exactly one hit, so "avoid the hazard" was unlearnable | A scan of 36 layouts; a fully braided board where the hazard is real and avoidable | `test_regressions` pins the board's properties |
 | 10 | Coverage showed a bar option never executed; the assistant deleted it; the suite failed in five places | Restored; a test renders the last ten seconds | Full suite |
 | 10 | Pygame keeps one timer per event type, silently replacing a resume timer | The scenario posts the second key from the agent hook | `test_scenarios` |
+| 12 | The pursuit benchmark stalled at 5 % CPU: a forest saved with `n_jobs=-1` spun up a thread pool for every single-row prediction | Single-threaded inference in the predictor; one prediction per tick shared by all hunters | Measured 100 ms → 19 ms on the unbounded forest, 7 ms after bounding it; `test_next_move` |
+| 12 | The saved forest was 216 MB, over GitHub's 100 MB file limit | Six bounded configurations measured on the validation tail; 120 trees of depth 12, compressed: 7.5 MB for −0.007 macro-F1; the 18 MB dataset git-ignored | Sizes and scores recorded in `docs/07b_next_move.md` |
+| 12 | Anticipating hunters were expected to catch more; they did not (same hits in 103 of 120 paired episodes) | Nothing changed in the code; the result is reported as a negative finding with its structural explanation | `reports/pursuit_benchmark.csv`, dashboard section 9 |
 
 ## 6. Where to look
 

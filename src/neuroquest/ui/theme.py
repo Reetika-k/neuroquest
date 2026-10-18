@@ -1,6 +1,11 @@
-"""Design system for the NeuroQuest interface: palette, type scale, spacing, and the drawing helpers
-every screen uses. Keeping these in one place is what makes the HUD, the panel and the overlays look
-like one product."""
+"""Design system for the NeuroQuest interface ("cartoon world", entry 13): palette, type scale,
+spacing, and the drawing helpers every screen uses. Keeping these in one place is what makes the
+HUD, the panel and the overlays look like one product.
+
+The look: a pastel sky, white rounded cards with soft shadows, dark-blue ink for text, and a few
+saturated accents (gem blue, hero yellow, hunter pink, hedge green). Everything is drawn with
+primitives; no image assets.
+"""
 
 from __future__ import annotations
 
@@ -8,25 +13,27 @@ import math
 
 import pygame
 
-# ---------- palette (neon only on accents) ----------
-BG_DEEP = (14, 18, 36)
-BG = (26, 32, 58)  # window frame: mid navy, never black
-SURFACE = (17, 22, 44)
-SURFACE_2 = (24, 30, 58)
-LINE = (46, 56, 96)
-CYAN = (54, 228, 255)  # #36E4FF
-CYAN_DIM = (0, 150, 178)
-VIOLET = (143, 110, 255)
-CRIMSON = (255, 56, 92)
-AMBER = (255, 184, 48)
-EMERALD = (24, 224, 170)
-TEXT = (232, 238, 255)
-TEXT_MUTED = (122, 136, 176)
-WARN = (255, 138, 60)
+# ---------- palette ----------
+BG = (196, 228, 255)  # sky: the window frame behind everything
+BG_DEEP = (52, 60, 84)  # ink (kept under its old name for callers)
+SURFACE = (255, 255, 255)  # cards
+SURFACE_2 = (240, 244, 252)  # tracks, secondary cards
+LINE = (222, 229, 242)
+CYAN = (74, 170, 255)  # accent blue (badges, time, "cautious")
+CYAN_DIM = (60, 130, 220)
+VIOLET = (160, 140, 255)
+CRIMSON = (255, 107, 138)  # hunter pink ("aggressive")
+AMBER = (255, 190, 70)  # hero yellow
+EMERALD = (96, 196, 110)  # hedge green ("explorer")
+TEXT = (52, 60, 84)  # ink
+TEXT_MUTED = (134, 143, 170)
+WARN = (255, 150, 80)
+ON_ACCENT = (255, 255, 255)  # text on a coloured pill
+SEP = "  /  "  # separator used in one-line texts (the rounded system font has no middle-dot glyph)
 
 # ---------- scale ----------
 SP = {"xs": 4, "sm": 8, "md": 12, "lg": 16, "xl": 24}
-RADIUS = {"sm": 6, "md": 10, "lg": 14}
+RADIUS = {"sm": 8, "md": 14, "lg": 20}
 SIZE = {"display": 40, "title": 20, "label": 11, "value": 22, "body": 14, "small": 12}
 
 _FONTS: dict[tuple[int, bool], pygame.font.Font] = {}
@@ -46,7 +53,7 @@ def font(size: int, bold: bool = False) -> pygame.font.Font:
             _FONTS.clear()
             _TEXT.clear()
     try:
-        _FONTS[key] = pygame.font.SysFont("avenirnext,helveticaneue,segoeui,arial", size, bold=bold)
+        _FONTS[key] = pygame.font.SysFont("arialrounded,avenirnext,helveticaneue,segoeui,arial", size, bold=bold)
     except Exception:  # no system fonts: the bundled one
         _FONTS[key] = pygame.font.Font(None, size)
     return _FONTS[key]
@@ -74,30 +81,67 @@ def mix(a, b, t: float):
     return tuple(int(x + (y - x) * t) for x, y in zip(a, b))
 
 
-def card(surface: pygame.Surface, rect: pygame.Rect, *, radius: int = RADIUS["md"], fill=SURFACE, alpha: int = 215, border=LINE, border_alpha: int = 150) -> None:
-    """A translucent rounded surface with a 1-px border: the basic HUD component."""
-    layer = pygame.Surface(rect.size, pygame.SRCALPHA)
-    pygame.draw.rect(layer, (*fill, alpha), layer.get_rect(), border_radius=radius)
-    pygame.draw.rect(layer, (*border, border_alpha), layer.get_rect(), width=1, border_radius=radius)
+_SHADOWS: dict[tuple, pygame.Surface] = {}
+
+
+def shadow(surface: pygame.Surface, rect: pygame.Rect, radius: int, dy: int = 5, alpha: int = 36) -> None:
+    """A soft drop shadow under a card: a translucent ink rectangle offset downwards. Cached per size,
+    because building a fresh alpha surface for every card on every frame was the main frame cost."""
+    key = (rect.w, rect.h, radius, alpha)
+    layer = _SHADOWS.get(key)
+    if layer is None:
+        layer = pygame.Surface((rect.w + 16, rect.h + 16), pygame.SRCALPHA)
+        pygame.draw.rect(layer, (40, 50, 90, alpha), pygame.Rect(8, 8, rect.w, rect.h), border_radius=radius)
+        if len(_SHADOWS) > 64:
+            _SHADOWS.clear()
+        _SHADOWS[key] = layer
+    surface.blit(layer, (rect.x - 8, rect.y - 8 + dy))
+
+
+_CARDS: dict[tuple, pygame.Surface] = {}
+
+
+def card(surface: pygame.Surface, rect: pygame.Rect, *, radius: int = RADIUS["md"], fill=SURFACE, alpha: int = 235, border=LINE, border_alpha: int = 200, lift: bool = False) -> None:
+    """A rounded surface with a 1-px border; ``lift`` adds the soft shadow: the basic HUD component.
+    The translucent layer is cached per size and colour (the panel's card alone is 280×640)."""
+    if lift:
+        shadow(surface, rect, radius)
+    key = (rect.w, rect.h, radius, tuple(fill), alpha, tuple(border), border_alpha)
+    layer = _CARDS.get(key)
+    if layer is None:
+        layer = pygame.Surface(rect.size, pygame.SRCALPHA)
+        pygame.draw.rect(layer, (*fill, alpha), layer.get_rect(), border_radius=radius)
+        pygame.draw.rect(layer, (*border, border_alpha), layer.get_rect(), width=1, border_radius=radius)
+        if len(_CARDS) > 64:
+            _CARDS.clear()
+        _CARDS[key] = layer
     surface.blit(layer, rect.topleft)
 
 
-def bar(surface: pygame.Surface, rect: pygame.Rect, frac: float, colour, track=SURFACE_2, glow_alpha: int = 0) -> None:
-    """A rounded progress bar (health, time, probabilities). ``glow_alpha`` adds a soft halo; the HUD
-    uses it on the time bar during the last ten seconds."""
+def pill(surface: pygame.Surface, rect: pygame.Rect, fill, label: str, colour=ON_ACCENT, size: int = SIZE["label"]) -> None:
+    """A coloured capsule with centred bold text (badges: ADAPTIVE, PAUSED, style)."""
+    pygame.draw.rect(surface, fill, rect, border_radius=rect.height // 2)
+    t = text(size, label, colour, True)
+    surface.blit(t, (rect.centerx - t.get_width() // 2, rect.centery - t.get_height() // 2))
+
+
+def bar(surface: pygame.Surface, rect: pygame.Rect, frac: float, colour, track=SURFACE_2) -> None:
+    """A rounded progress bar (style probabilities, difficulty knobs). The time display is a ``ring``
+    since entry 13, so the old halo option went with it (no caller remained)."""
     radius = rect.height // 2
     pygame.draw.rect(surface, track, rect, border_radius=radius)
     width = int(rect.width * max(0.0, min(1.0, frac)))
     if width > 0:
-        if glow_alpha:
-            layer = pygame.Surface((rect.width + 8, rect.height + 8), pygame.SRCALPHA)
-            pygame.draw.rect(layer, (*colour, glow_alpha), pygame.Rect(4, 4, width, rect.height).inflate(6, 6), border_radius=radius + 3)
-            surface.blit(layer, (rect.x - 4, rect.y - 4))
         pygame.draw.rect(surface, colour, pygame.Rect(rect.x, rect.y, max(width, rect.height), rect.height), border_radius=radius)
 
 
-# The glow, vignette and edge-pulse helpers of the sci-fi look (entry 8c) were removed in Phase 10:
-# the bright-arcade renderer (entry 8e) stopped using them and they were dead, untested code.
+def ring(surface: pygame.Surface, centre: tuple[int, int], radius: int, frac: float, colour, track=SURFACE_2, width: int = 5) -> None:
+    """A progress ring that empties clockwise from the top (the time dial)."""
+    pygame.draw.circle(surface, track, centre, radius, width)
+    frac = max(0.0, min(1.0, frac))
+    if frac > 0:
+        rect = pygame.Rect(centre[0] - radius, centre[1] - radius, radius * 2, radius * 2)
+        pygame.draw.arc(surface, colour, rect, math.pi / 2, math.pi / 2 + 2 * math.pi * frac, width)
 
 
 # ---------- tiny vector icons (all drawn with primitives) ----------
@@ -122,34 +166,28 @@ def icon_crystal(surface: pygame.Surface, x: int, y: int, size: int, colour, cor
         pygame.draw.polygon(surface, core, [(x, y - h // 2), (x + w // 2, y), (x, y + h // 2), (x - w // 2, y)])
 
 
-def icon_clock(surface: pygame.Surface, x: int, y: int, size: int, colour) -> None:
-    r = size // 2
-    pygame.draw.circle(surface, colour, (x, y), r, width=2)
-    pygame.draw.line(surface, colour, (x, y), (x, y - r + 3), 2)
-    pygame.draw.line(surface, colour, (x, y), (x + r - 4, y), 2)
-
-
 def icon_drone(surface: pygame.Surface, x: int, y: int, size: int, colour, eye=None) -> None:
-    h = size // 2
-    pygame.draw.polygon(surface, colour, [(x, y - h), (x + h, y + h // 2), (x, y + h // 4), (x - h, y + h // 2)])
+    """A small hunter head: a round face with two spikes."""
+    r = size // 2
+    pygame.draw.circle(surface, colour, (x, y), r)
+    pygame.draw.polygon(surface, colour, [(x - r + 2, y - r + 3), (x - r // 2, y - r - r // 2), (x - 1, y - r + 2)])
+    pygame.draw.polygon(surface, colour, [(x + 1, y - r + 2), (x + r // 2, y - r - r // 2), (x + r - 2, y - r + 3)])
     if eye:
-        pygame.draw.circle(surface, eye, (x, y - h // 4), max(1, size // 8))
-
-
-def icon_bolt(surface: pygame.Surface, x: int, y: int, size: int, colour) -> None:
-    h = size // 2
-    w = size // 4
-    pygame.draw.polygon(surface, colour, [(x + w // 2, y - h), (x - w, y + 1), (x, y + 1), (x - w // 2, y + h), (x + w, y - 1), (x, y - 1)])
+        pygame.draw.circle(surface, eye, (x - r // 3, y - 1), max(1, size // 8))
+        pygame.draw.circle(surface, eye, (x + r // 3, y - 1), max(1, size // 8))
 
 
 def icon_chip(surface: pygame.Surface, x: int, y: int, size: int, colour) -> None:
-    """A small 'AI core' chip: square with notched corners and a glowing centre."""
+    """The brand mark: a smiling round hero face in the accent colour."""
     r = size // 2
-    pygame.draw.rect(surface, colour, pygame.Rect(x - r, y - r, size, size), width=2, border_radius=3)
-    pygame.draw.rect(surface, colour, pygame.Rect(x - r // 2, y - r // 2, r, r), border_radius=2)
-    for dx in (-r + 2, 0, r - 2):
-        pygame.draw.line(surface, colour, (x + dx, y - r - 3), (x + dx, y - r), 1)
-        pygame.draw.line(surface, colour, (x + dx, y + r), (x + dx, y + r + 3), 1)
+    pygame.draw.circle(surface, colour, (x, y), r)
+    pygame.draw.circle(surface, (255, 255, 255), (x - r // 3, y - r // 4), max(1, r // 4))
+    pygame.draw.circle(surface, (255, 255, 255), (x + r // 3, y - r // 4), max(1, r // 4))
+    pygame.draw.arc(surface, (255, 255, 255), pygame.Rect(x - r // 2, y - r // 4, r, r), math.pi, 2 * math.pi, max(1, r // 4))
+
+
+def icon_dot(surface: pygame.Surface, x: int, y: int, size: int, colour) -> None:
+    pygame.draw.circle(surface, colour, (x, y), max(3, size // 2))
 
 
 def pulse(t: float, speed: float = 2.0, phase: float = 0.0) -> float:

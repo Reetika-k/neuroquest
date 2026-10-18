@@ -150,4 +150,4 @@ def test_new_game_places_enemies_away_from_the_player() -> None:
         assert distances[enemy.pos] >= config.enemy_min_start_distance * farthest
     assert new_game(config, DifficultyParams(enemy_count=0), seed=5).enemies == ()
     assert all(e.kind == "random" for e in new_game(GameConfig(enemy_kind="random"), params, seed=5).enemies)
-    assert set(DEFAULT_POLICIES) == {"astar", "random"}
+    assert set(DEFAULT_POLICIES) == {"astar", "random", "anticipator"}  # anticipator added in Phase 7b
