@@ -7,6 +7,8 @@ A maze survival game (Python + Pygame) built as an AI/ML capstone. Hunters navig
 <img src="docs/screenshots/neuroquest-agent.gif" alt="The trained Q-learning agent crossing its training board, skirting the hunter" width="320">
 </p>
 
+**Submission report (PDF):** [docs/NeuroQuest_Capstone_Submission.pdf](docs/NeuroQuest_Capstone_Submission.pdf), built from [docs/CAPSTONE_DOCUMENTATION.md](docs/CAPSTONE_DOCUMENTATION.md) with `node scripts/build-submission.mjs` (Node 20+ and Google Chrome). **Live AI dashboard:** https://reetika-k.github.io/neuroquest/reports/dashboard.html
+
 **AI dashboard:** `neuroquest/reports/dashboard.html` (the path from the parent of a clone, and the path on GitHub Pages; [open it](reports/dashboard.html)). One self-contained HTML file with the figures embedded; rebuild with `neuroquest dashboard`.
 
 ## What is inside
