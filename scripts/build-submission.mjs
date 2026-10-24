@@ -27,12 +27,14 @@ const outPdf = path.join(root, CONFIG.pdf);
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 // backslash escapes (A\*, \|) become placeholders so the emphasis rules leave them alone
 const ESC = ["*", "_", "|", "`", "[", "]"];
-const inline = (s) => esc(s.replace(/\\([*_|`[\]])/g, (_, c) => `\u0000${ESC.indexOf(c)}\u0000`))
+const inline = (s) => { const spans = []; return inlineRest(s.replace(/``\s?(.+?)\s?``/g, (_, c) => `\u0003${spans.push(esc(c)) - 1}\u0003`)).replace(/\u0003(\d+)\u0003/g, (_, i) => `<code>${spans[+i]}</code>`); };
+// double-backtick spans (code that itself contains a backtick) are set aside first, then the rest is converted
+const inlineRest = (s) => esc(s.replace(/\\([*_|`[\]])/g, (_, c) => `\u0000${ESC.indexOf(c)}\u0000`))
   .replace(/`([^`]+)`/g, "<code>$1</code>")
   .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
   .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>")
   .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-  .replace(/(^|[\s(])(https:\/\/[^\s<)]+)/g, '$1<a href="$2">$2</a>')
+  .replace(/(^|[\s(])(https:\/\/[^\s<)]*[^\s<).,;:])/g, '$1<a href="$2">$2</a>') // trailing punctuation stays outside the link
   .replace(/\u0000(\d)\u0000/g, (_, i) => ESC[+i]);
 const img = (file) => pathToFileURL(path.join(docs, file)).href;
 
@@ -42,7 +44,12 @@ function render(md) {
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
     if (!l.trim() || /^-{3,}$/.test(l.trim())) continue;
-    if (l.startsWith("```")) { const buf = []; while (++i < lines.length && !lines[i].startsWith("```")) buf.push(lines[i]); out.push(`<pre>${esc(buf.join("\n"))}</pre>`); continue; }
+    if (l.startsWith("```")) {
+      const buf = []; while (++i < lines.length && !lines[i].startsWith("```")) buf.push(lines[i]);
+      // shrink wide diagrams to fit the page: ~490pt of usable width, a monospace character is about 0.6em wide
+      const longest = Math.max(...buf.map((x) => [...x].length), 1), size = Math.min(7.8, 490 / (0.6 * longest)).toFixed(2);
+      out.push(`<pre style="font-size:${size}pt">${esc(buf.join("\n"))}</pre>`); continue;
+    }
     const h = l.match(/^(#{2,3}) (.*)/);
     if (h) { out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`); continue; }
     const im = l.match(/^!\[([^\]]*)\]\(([^)]+)\)/);
