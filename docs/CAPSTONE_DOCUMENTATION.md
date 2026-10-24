@@ -12,8 +12,10 @@ Status: **final, approved by the learner 2026-10-15** · Date: 2026-10-15 · Rep
 | **Project title** | NeuroQuest — The Game That Learns You |
 | **Type** | Self-directed AI/ML capstone: a Python/Pygame maze survival game with search-based enemies, a supervised player-style classifier, bounded adaptive difficulty, a reinforcement-learning agent and an explainability dashboard |
 | **Development window** | 2026-10-10 to 2026-10-15, eleven approved phases |
-| **Coding assistant** | Claude Code, directed through the phase-gated workflow in `docs/00_project_brief.md` |
-| **Dashboard** | `neuroquest/reports/dashboard.html` |
+| **Coding assistant** | AI coding assistant, directed through the phase-gated workflow in `docs/00_project_brief.md` |
+| **AI dashboard** | https://reetika-k.github.io/neuroquest/reports/dashboard.html |
+| **Project page** | https://reetika-k.github.io/neuroquest/ (a desktop Python game: it runs from a clone, see section 15) |
+| **Repository** | https://github.com/Reetika-k/neuroquest |
 
 ## 2. Project overview
 
@@ -204,6 +206,21 @@ The learner directed the assistant with one complete brief, then with short appr
 
 Screenshots and animations: `docs/screenshots/neuroquest-play.gif` (the cautious profile on the default board, panel and AI vision open, two difficulty changes), `docs/screenshots/neuroquest-agent.gif` (the agent), `phase9-dashboard.png`, `phase9b-*.png`, `ui5-*.png` (the cartoon-world interface of entry 13; `ui4-*.png` show the earlier bright-arcade look).
 
+![Start screen](screenshots/ui5-menu.png)
+*Start screen: objective, controls and what the AI does.*
+
+![Playing with the AI panel](screenshots/ui5-playing-panel.png)
+*Playing with the AI panel open: the classifier reads the player as cautious (100 %), the adaptive-difficulty settings, and the last decision with its reason.*
+
+![An adaptive-difficulty decision](screenshots/ui5-decision.png)
+*The controller eases the game after heavy damage (enemy move interval 4 → 5) and logs the inputs, rule and reason.*
+
+![Q-learning curve](screenshots/phase9b-learning-curve.png)
+*The Q-learning agent learning from the rules alone: return, win rate and hits taken per episode over 20,000 training episodes.*
+
+![AI dashboard](screenshots/dashboard-top.png)
+*The live AI dashboard: the headline numbers and the gameplay data; further down it compares the model with its baselines and shows the confusion matrix, the decisions and the agent.*
+
 ## 12. Tools and technologies
 
 | Tool | Version | Use |
@@ -214,7 +231,7 @@ Screenshots and animations: `docs/screenshots/neuroquest-play.gif` (the cautious
 | scikit-learn | 1.9.1 | models, grouped splits, metrics, permutation importance |
 | matplotlib | 3.11.2 | dashboard figures (Agg backend) |
 | pytest, coverage | 8.4.2, 7.16.2 | tests, line coverage |
-| Claude Code | — | coding assistant under the phase-gated brief |
+| AI coding assistant | — | coding assistant under the phase-gated brief |
 
 No image or audio assets; no cloud services, databases or paid APIs.
 
@@ -253,7 +270,7 @@ A clone contains the processed dataset, the trained models and every report; the
 ## 16. Demonstration and delivery
 
 - Demonstration script (about 8 minutes, with what to say and what to expect): `docs/DEMO_SCRIPT.md`.
-- Publishing the repository and hosting the dashboard on GitHub Pages, where it will be served at `…/neuroquest/reports/dashboard.html`: `docs/DEPLOYMENT.md`.
+- AI dashboard (live): https://reetika-k.github.io/neuroquest/reports/dashboard.html · project page: https://reetika-k.github.io/neuroquest/ · repository: https://github.com/Reetika-k/neuroquest. Hosting steps: `docs/DEPLOYMENT.md`.
 - Final README: `neuroquest/README.md`; repository README: `../README.md`.
 
 ## 17. Final outcome
