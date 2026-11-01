@@ -10,7 +10,7 @@ One entry per step, in the eight-part format required by the project brief (`00_
 
 **2. Prompt given to the coding assistant.** The full project brief in `00_project_brief.md`, ending with "Begin with Phase 1: Requirements and feasibility only … Do not generate code yet … End by asking me to approve the requirements before moving to Phase 2."
 
-**3. Generated output.** `01_requirements.md` (draft 1 produced in an earlier Claude Code session today; revision 2 produced in this session after review).
+**3. Generated output.** `01_requirements.md` (draft 1 produced in an earlier AI-assistant session today; revision 2 produced in this session after review).
 
 **4. What worked and what failed.** Draft 1 covered objectives, MVP vs extensions, AI/ML concepts, functional and non-functional requirements, risks, ten measurable success criteria and the deliverables per phase. Review found two weaknesses and one gap:
 - The labelling strategy (FR7) derived labels from the same features by threshold rules, so a classifier would only re-learn those rules. The brief explicitly forbids claiming that such a model "learned behaviour".
