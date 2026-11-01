@@ -1,6 +1,6 @@
 # NeuroQuest — Phase 1: Requirements and Feasibility
 
-Status: **approved 2026-10-10** · Author: Reetika Kukreja with Claude Code as coding assistant · Date: 2026-10-10 · Revision 2: labelling strategy (profile-derived labels), Python version finding, hosting risk · Revision 3 (at approval): six-feature list adopted; next-move model, RL agent, KNN baseline, per-class precision/recall, feature importance and learning-progress views added as planned extensions
+Status: **approved 2026-10-10** · Author: Reetika Kukreja with an AI coding assistant · Date: 2026-10-10 · Revision 2: labelling strategy (profile-derived labels), Python version finding, hosting risk · Revision 3 (at approval): six-feature list adopted; next-move model, RL agent, KNN baseline, per-class precision/recall, feature importance and learning-progress views added as planned extensions
 
 ## 1. Project summary
 

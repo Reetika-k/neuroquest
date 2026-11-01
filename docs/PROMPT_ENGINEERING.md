@@ -1,6 +1,6 @@
 # Prompt engineering log and AI-assisted coding iterations
 
-This document summarises how the learner directed the coding assistant (Claude Code) and what each kind of prompt produced. The full record, one eight-part entry per step (problem, prompt, output, what worked and failed, error or limitation, revision, tests, improvement), is `docs/DEVELOPMENT_LOG.md` (16 entries). Nothing here is invented: every prompt below is quoted or paraphrased from that log and the conversation it records; every iteration named is one that happened.
+This document summarises how the learner directed the AI coding assistant and what each kind of prompt produced. The full record, one eight-part entry per step (problem, prompt, output, what worked and failed, error or limitation, revision, tests, improvement), is `docs/DEVELOPMENT_LOG.md` (16 entries). Nothing here is invented: every prompt below is quoted or paraphrased from that log and the conversation it records; every iteration named is one that happened.
 
 ## 1. How the collaboration was set up
 
